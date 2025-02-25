@@ -3,109 +3,36 @@ import numpy as np
 import re
 import argparse
 from pathlib import Path
+from matchms.importing.load_from_msp import parse_msp_file
 
 
-class GetMethod:
-
-    def is_number(self, s):
+def read_msp(msp_file:str) -> dict:
         """
-        Check if a string represents a numeric value.
-
-        Args:
-            s (str): The string to check.
-
-        Returns:
-            bool: True if the string is a valid numeric value, False otherwise.
-        """
-        pattern = r"^[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?$"
-        return bool(re.match(pattern, s))
-
-    def read_msp(self, msp_file):
-        """
-        Read data from an MSP file and convert it into a dictionary format.
+        Read data from an MSP file and convert it into a dictionary format using matchms.
 
         Args:
             msp_file (str): The path to the MSP file.
 
         Returns:
             dict: A dictionary where keys are compound names and values are dictionaries of ion intensities.
-
         """
-        msp_file = open(msp_file, "r")
-        list_1 = msp_file.readlines()
-        new_list = [item.replace("NAME:", "Name:") for item in list_1]
-        list_1 = [item.replace("Num peaks:", "Num Peaks:") for item in new_list]
-        lists = str(list_1)
-        lines = lists.split("Name: ")
+        spectra = parse_msp_file(msp_file)
         meta = {}
-        for l in lines:
-            line1 = l.strip().split("\\n")
-            name_1 = line1[0]
-            line2 = l.strip().split("Num Peaks:")
+        for spectrum in spectra:
+            name = spectrum.get("params").get("name")
             ion_intens_dic = {}
-            if len(line2) > 1:
-                if ";" in line2[1]:
-                    matches = re.findall(r"(\d+) (\d+);", line2[1])
-                    ion_intens_dic = {}
-                    for key, value in matches:
-                        key = round(float(key))
-                        value = int(value)
-                        if key in ion_intens_dic:
-                            ion_intens_dic[key] = max(ion_intens_dic[key], value)
-                        else:
-                            ion_intens_dic[key] = value
-
-                elif "\\t" in line2[1]:
-                    line3 = line2[1].split("\\n', '")[1:-2]
-                    for ion in line3:
-                        ion1 = ion.split("\\t")
-                        if (
-                            len(ion1) == 2
-                            and self.is_number(ion1[0])
-                            and self.is_number(ion1[1])
-                        ):
-                            key = round(float(ion1[0]))
-                            value = float(ion1[1])
-                            if key in ion_intens_dic:
-                                ion_intens_dic[key] = max(ion_intens_dic[key], value)
-                            else:
-                                ion_intens_dic[key] = value
-                elif "\\n" in line2[1]:
-                    line3 = line2[1].split("\\n', '")[1:-2]
-                    ion_intens_dic = {}
-                    for ion in line3:
-                        ion1 = ion.split(" ")
-                        if (
-                            len(ion1) == 2
-                            and self.is_number(ion1[0])
-                            and self.is_number(ion1[1])
-                        ):
-                            key = round(float(ion1[0]))
-                            value = float(ion1[1])
-                            if key in ion_intens_dic:
-                                ion_intens_dic[key] = max(ion_intens_dic[key], value)
-                            else:
-                                ion_intens_dic[key] = value
-                        elif ":" in ion:
-                            pattern = re.compile(r"(\d+):(\d+)")
-                            matches = pattern.findall(ion)
-                            for key, value in matches:
-                                key = round(float(key))
-                                value = int(value)
-                                if key in ion_intens_dic:
-                                    ion_intens_dic[key] = max(
-                                        ion_intens_dic[key], value
-                                    )
-                                else:
-                                    ion_intens_dic[key] = value
-
+            for mz, intensity in zip(spectrum.get("m/z array"), spectrum.get("intensity array")):
+                key = round(float(mz))
+                value = int(intensity)
+                if key in ion_intens_dic:
+                    ion_intens_dic[key] = max(ion_intens_dic[key], value)
                 else:
-                    print("The format is not recognized.")
-            meta[name_1] = ion_intens_dic
-
+                    ion_intens_dic[key] = value
+            meta[name] = ion_intens_dic
         return meta
 
-    def dot_product_distance(self, p, q):
+
+def dot_product_distance(p:np.ndarray, q:np.ndarray) -> float:
         """
         Calculate the dot product distance between two vectors p and q.
 
@@ -116,17 +43,22 @@ class GetMethod:
         Returns:
             float: Dot product distance between the two vectors.
         """
+        if np.sum(p) == 0 or np.sum(q) == 0:
+            return 0
+        return np.power(np.sum(q * p), 2) / (np.sum(np.power(q, 2)) * np.sum(np.power(p, 2)))
 
-        if (np.sum(p)) == 0 or (np.sum(q)) == 0:
-            score = 0
-        else:
-            score = np.power(np.sum(q * p), 2) / (
-                np.sum(np.power(q, 2)) * np.sum(np.power(p, 2))
-            )
-        return score
 
-    def weighted_dot_product_distance(self, compare_df, fr_factor):
+def weighted_dot_product_distance(compare_df, fr_factor):
+        """
+        Calculate the weighted dot product distance between two vectors in a DataFrame.
 
+        Args:
+            compare_df (pd.DataFrame): DataFrame with two columns representing the vectors to compare.
+            fr_factor (float): Factor used in the calculation.
+
+        Returns:
+            float: Composite score based on the weighted dot product distance.
+        """
         m_q = pd.Series(compare_df.index)
         m_q = m_q.astype(float)
         i_q = np.array(compare_df.iloc[:, 0])
@@ -135,7 +67,7 @@ class GetMethod:
         l = 2
         w_q = np.power(i_q, k) * np.power(m_q, l)
         w_r = np.power(i_r, k) * np.power(m_q, l)
-        ss = self.dot_product_distance(w_q, w_r)
+        ss = dot_product_distance(w_q, w_r)
         shared_spec = np.vstack((i_q, i_r))
         shared_spec = pd.DataFrame(shared_spec)
         shared_spec = shared_spec.loc[:, (shared_spec != 0).all(axis=0)]
@@ -156,6 +88,9 @@ class GetMethod:
             composite_score = ss
 
         return composite_score
+
+
+class GetMethod:
 
     def calculate_similarity(self, target_name, df, n, fr_factor):
         """
@@ -178,7 +113,7 @@ class GetMethod:
                 second_col = df.loc[compound]
                 compare_df = pd.concat([first_col, second_col], axis=1)
                 compare_df = compare_df.astype(float)
-                score = self.weighted_dot_product_distance(compare_df, fr_factor)
+                score = weighted_dot_product_distance(compare_df, fr_factor)
                 result_df.loc[compound, "Score"] = score
 
         return result_df
@@ -325,7 +260,7 @@ class GetMethod:
                 print("Error:", e)
 
         error_df = pd.DataFrame(columns=["error"])
-        meta_1 = self.read_msp(msp)
+        meta_1 = read_msp(msp)
 
         matrix = pd.DataFrame()
         for name, dic in meta_1.items():

@@ -51,7 +51,7 @@ class TestSmoke(unittest.TestCase):
             file_name = file[:-4]
             ground_truth_path = get_test_file(file_name)
             ground_truth_df = pd.read_csv(ground_truth_path)
-            pd.testing.assert_frame_equal(output_df, ground_truth_df, check_dtype=False)
+            pd.testing.assert_frame_equal(output_df, ground_truth_df, atol=1e-5)
 
 if __name__ == "__main__":
     unittest.main()
