@@ -166,491 +166,473 @@ def calculate_average_score_and_difference_count(
         return difference_count_df
 
 
-class GetMethod:
+def calculate_combination_score(combination_df, targeted_compound, temp_df, prefer_mz_threshold):
+    """
+    Calculate the combination score for ion combinations in a DataFrame.
 
- 
+    Args:
+        combination_df (pd.DataFrame): DataFrame containing ion combinations.
+        targeted_compound (str): The name of the targeted compound.
+        temp_df (pd.DataFrame): Temporary DataFrame containing compound data.
+        prefer_mz_threshold (int): The preferred m/z threshold.
 
-    def calculate_combination_score(
-        self, combination_df, targeted_compound, temp_df, prefer_mz_threshold
-    ):
-        """
-        Calculate the combination score for ion combinations in a DataFrame.
+    Returns:
+        pd.DataFrame: DataFrame with combination scores added.
 
-        Args:
-            combination_df (pd.DataFrame): DataFrame containing ion combinations.
-            targeted_compound (str): The name of the targeted compound.
-            temp_df (pd.DataFrame): Temporary DataFrame containing compound data.
-            prefer_mz_threshold (int): The preferred m/z threshold.
-
-        Returns:
-            pd.DataFrame: DataFrame with combination scores added.
-
-        """
-        for index, row in combination_df.iterrows():
-            ion_list = re.findall("\d+\.?\d*", index)
-            ion_list = list(map(int, ion_list))
-            new_temp_df = temp_df.loc[str(targeted_compound), ion_list].to_frame()
-            new_temp_df["ion"] = new_temp_df.index.tolist()
-            new_temp_df["ion"] = new_temp_df["ion"].astype("int")
-            new_temp_df["ion"] = np.where(
-                new_temp_df["ion"] < prefer_mz_threshold, 1, new_temp_df["ion"]
-            )
-            new_temp_df["score"] = (pow(new_temp_df["ion"], 3)) * (
-                pow(new_temp_df[str(targeted_compound)], 0.5)
-            )
-            combination_df.loc[index, "com_score"] = new_temp_df["score"].sum()
-
-        return combination_df
-
-    def calculate_solo_compound_combination_score(self, matrix_1, prefer_mz_threshold):
-        """
-        Calculate the combination score for solo compounds in a DataFrame.
-
-        Args:
-            matrix_1 (pd.DataFrame): DataFrame containing solo compound data.
-            prefer_mz_threshold (int): The preferred m/z threshold.
-
-        Returns:
-            pd.DataFrame: DataFrame with combination scores added and sorted by score.
-
-        """
-        matrix_1["ion"] = matrix_1["ion"].apply(
-            lambda x: 1 if x < prefer_mz_threshold else x
+    """
+    for index, row in combination_df.iterrows():
+        ion_list = re.findall("\d+\.?\d*", index)
+        ion_list = list(map(int, ion_list))
+        new_temp_df = temp_df.loc[str(targeted_compound), ion_list].to_frame()
+        new_temp_df["ion"] = new_temp_df.index.tolist()
+        new_temp_df["ion"] = new_temp_df["ion"].astype("int")
+        new_temp_df["ion"] = np.where(
+            new_temp_df["ion"] < prefer_mz_threshold, 1, new_temp_df["ion"]
         )
-        matrix_1["com_score"] = matrix_1.apply(
-            lambda row: pow(row.iloc[0], 0.5) * pow(row.iloc[1], 3), axis=1
+        new_temp_df["score"] = (pow(new_temp_df["ion"], 3)) * (
+            pow(new_temp_df[str(targeted_compound)], 0.5)
         )
-        matrix_1 = matrix_1.sort_values(by="com_score", ascending=False)
-        return matrix_1
+        combination_df.loc[index, "com_score"] = new_temp_df["score"].sum()
 
-    def validateTitle(self, title):
-        rstr = r"[\/\\\:\*\?\"\<\>\|]"  # '/ \ : * ? " < > |'
-        new_title = re.sub(rstr, "_", title)  # 替换为下划线
-        return new_title
+    return combination_df
 
-    def group_rows(self, row):
-        return "_".join(row.astype(str))
+def calculate_solo_compound_combination_score(matrix_1, prefer_mz_threshold):
+    """
+    Calculate the combination score for solo compounds in a DataFrame.
 
-    def replace_1(self, x):
-        if 1 in x.values:
-            x[:] = 1
-        return x
+    Args:
+        matrix_1 (pd.DataFrame): DataFrame containing solo compound data.
+        prefer_mz_threshold (int): The preferred m/z threshold.
 
-    def Main(
-        self,
-        msp_path,
-        rt_data_path,
-        set_name_list,
-        name_list_path,
-        mz_min,
-        mz_max,
-        outpath,
-        rt_window,
-        min_ion_intensity_percent,
-        min_ion_num,
-        prefer_mz_threshold,
-        similarity_threshold,
-        fr_factor,
-        retention_time_max,
-        solvent_delay,
-        sim_sig_max,
-        min_dwell_time,
-        point_per_s,
-        convert_to_ag_method,
-    ):
+    Returns:
+        pd.DataFrame: DataFrame with combination scores added and sorted by score.
 
-        msp = Path(msp_path)
+    """
+    matrix_1["ion"] = matrix_1["ion"].apply(
+        lambda x: 1 if x < prefer_mz_threshold else x
+    )
+    matrix_1["com_score"] = matrix_1.apply(
+        lambda row: pow(row.iloc[0], 0.5) * pow(row.iloc[1], 3), axis=1
+    )
+    matrix_1 = matrix_1.sort_values(by="com_score", ascending=False)
+    return matrix_1
 
+def group_rows(row):
+    return "_".join(row.astype(str))
+
+def replace_1(x):
+    if 1 in x.values:
+        x[:] = 1
+    return x
+
+def main(
+    msp_path,
+    rt_data_path,
+    set_name_list,
+    name_list_path,
+    mz_min,
+    mz_max,
+    outpath,
+    rt_window,
+    min_ion_intensity_percent,
+    min_ion_num,
+    prefer_mz_threshold,
+    similarity_threshold,
+    fr_factor,
+    retention_time_max,
+    solvent_delay,
+    sim_sig_max,
+    min_dwell_time,
+    point_per_s,
+    convert_to_ag_method,
+):
+
+    msp = Path(msp_path)
+
+    try:
+        RT_data = pd.read_csv(rt_data_path, index_col=0)
+    except UnicodeDecodeError:
         try:
-            RT_data = pd.read_csv(rt_data_path, index_col=0)
-        except UnicodeDecodeError:
-            try:
-                RT_data = pd.read_csv(rt_data_path, index_col=0, encoding="gbk")
-            except UnicodeDecodeError as e:
-                print("Error:", e)
+            RT_data = pd.read_csv(rt_data_path, index_col=0, encoding="gbk")
+        except UnicodeDecodeError as e:
+            print("Error:", e)
 
-        error_df = pd.DataFrame(columns=["error"])
-        meta_1 = read_msp(msp)
+    error_df = pd.DataFrame(columns=["error"])
+    meta_1 = read_msp(msp)
 
-        matrix = pd.DataFrame()
-        for name, dic in meta_1.items():
-            b = {name: dic}
-            y = pd.DataFrame.from_dict(b).T
-            matrix = pd.concat([matrix, y], axis=0, join="outer").fillna(0)
+    matrix = pd.DataFrame()
+    for name, dic in meta_1.items():
+        b = {name: dic}
+        y = pd.DataFrame.from_dict(b).T
+        matrix = pd.concat([matrix, y], axis=0, join="outer").fillna(0)
 
-        for col_name in list(matrix):
-            if (
-                type(col_name) not in [float, int, np.float64, np.int64]
-                and col_name.isdigit() == False
-            ):
-                matrix.drop(columns=col_name, inplace=True)
+    for col_name in list(matrix):
+        if (
+            type(col_name) not in [float, int, np.float64, np.int64]
+            and col_name.isdigit() == False
+        ):
+            matrix.drop(columns=col_name, inplace=True)
 
-        for ion in list(matrix):
-            if int(ion) < mz_min or int(ion) > mz_max:
-                matrix.drop(columns=ion, inplace=(True))
+    for ion in list(matrix):
+        if int(ion) < mz_min or int(ion) > mz_max:
+            matrix.drop(columns=ion, inplace=(True))
 
-        matrix_name = matrix.index.tolist()
+    matrix_name = matrix.index.tolist()
 
-        duplicated_index = RT_data.index[RT_data.index.duplicated()]
-        for index in duplicated_index:
-            error_df.loc[index, "error"] = "Duplicated RT"
-        RT_data.drop(duplicated_index, axis=0, inplace=True)
-        for index_1, row in RT_data.iterrows():
+    duplicated_index = RT_data.index[RT_data.index.duplicated()]
+    for index in duplicated_index:
+        error_df.loc[index, "error"] = "Duplicated RT"
+    RT_data.drop(duplicated_index, axis=0, inplace=True)
+    for index_1, row in RT_data.iterrows():
 
-            if index_1 not in matrix_name:
-                error_df.loc[index_1, "error"] = (
-                    "This compound is in RT list, but not in MSP library"
+        if index_1 not in matrix_name:
+            error_df.loc[index_1, "error"] = (
+                "This compound is in RT list, but not in MSP library"
+            )
+            RT_data.drop(index=index_1, inplace=True)
+
+        elif (
+            type(row[0]) not in [float, int, np.float64, np.int64]
+            or row[0] == np.nan
+        ):
+            error_df.loc[index_1, "error"] = "RT format error"
+            RT_data.drop(index=index_1, inplace=True)
+
+    RT_data = RT_data.sort_values(by="RT")
+
+    if set_name_list:
+        with open(name_list_path) as f1:
+            f2 = list(f1)
+        compound_list = [name.strip().strip('"') for name in f2]
+        compound_list = list(set(compound_list))
+        for i in compound_list:
+            if i not in RT_data.index.values:
+                error_df.loc[i, "error"] = (
+                    "This compound is in name list, but not in RT list"
                 )
-                RT_data.drop(index=index_1, inplace=True)
+                compound_list.remove(i)
 
-            elif (
-                type(row[0]) not in [float, int, np.float64, np.int64]
-                or row[0] == np.nan
-            ):
-                error_df.loc[index_1, "error"] = "RT format error"
-                RT_data.drop(index=index_1, inplace=True)
+    else:
+        compound_list = RT_data.index.values.tolist()
+    error_df.to_csv(
+        Path(outpath) / "input_data_error_info.csv",
+        index=True,
+        index_label="Name",
+    )
+    nearby_compound_dic = {}
+    for name in compound_list:
+        if name in RT_data.index.values.tolist():
+            rt = RT_data.at[name, "RT"]
+            nearby_compound_dic[name] = RT_data[
+                (RT_data.iloc[:, 0] >= rt - rt_window)
+                & (RT_data.iloc[:, 0] <= rt + rt_window)
+            ].index.tolist()
+    combination_result_df_file = Path("combination_results.csv")
+    combination_result_df = None
 
-        RT_data = RT_data.sort_values(by="RT")
-
-        if set_name_list:
-            with open(name_list_path) as f1:
-                f2 = list(f1)
-            compound_list = [name.strip().strip('"') for name in f2]
-            compound_list = list(set(compound_list))
-            for i in compound_list:
-                if i not in RT_data.index.values:
-                    error_df.loc[i, "error"] = (
-                        "This compound is in name list, but not in RT list"
-                    )
-                    compound_list.remove(i)
-
-        else:
-            compound_list = RT_data.index.values.tolist()
-        error_df.to_csv(
-            Path(outpath) / "input_data_error_info.csv",
-            index=True,
-            index_label="Name",
+    if combination_result_df_file.exists():
+        combination_result_df = pd.read_csv(
+            combination_result_df_file, header=0, index_col=0
         )
-        nearby_compound_dic = {}
-        for name in compound_list:
-            if name in RT_data.index.values.tolist():
-                rt = RT_data.at[name, "RT"]
-                nearby_compound_dic[name] = RT_data[
-                    (RT_data.iloc[:, 0] >= rt - rt_window)
-                    & (RT_data.iloc[:, 0] <= rt + rt_window)
-                ].index.tolist()
-        combination_result_df_file = Path("combination_results.csv")
-        combination_result_df = None
 
-        if combination_result_df_file.exists():
-            combination_result_df = pd.read_csv(
-                combination_result_df_file, header=0, index_col=0
-            )
+    if combination_result_df is None:
+        combination_result_df = pd.DataFrame(
+            columns=[
+                "RT",
+                "Ion_Combination",
+                "Note",
+                "Similar_Compound_List",
+                "SCL_Note",
+            ]
+        )
 
-        if combination_result_df is None:
-            combination_result_df = pd.DataFrame(
-                columns=[
-                    "RT",
-                    "Ion_Combination",
-                    "Note",
-                    "Similar_Compound_List",
-                    "SCL_Note",
-                ]
-            )
+        min_ion_intensity = min_ion_intensity_percent * 10
 
-            min_ion_intensity = min_ion_intensity_percent * 10
+        for targeted_compound, nearby_compound_list in nearby_compound_dic.items():
+            combination_result_df.loc[targeted_compound, "RT"] = RT_data.loc[
+                targeted_compound, "RT"
+            ]
+            solo_list = []
+            if nearby_compound_list == [targeted_compound]:
+                scl = []
+                combination_result_df.loc[
+                    targeted_compound, "Similar_Compound_List"
+                ] = scl
+                combination_result_df.loc[targeted_compound, "SCL_Note"] = (
+                    "No adjacent compounds."
+                )
 
-            for targeted_compound, nearby_compound_list in nearby_compound_dic.items():
-                combination_result_df.loc[targeted_compound, "RT"] = RT_data.loc[
-                    targeted_compound, "RT"
-                ]
-                title = self.validateTitle(str(targeted_compound))
-                solo_list = []
-                error_list_2 = []
-                if nearby_compound_list == [targeted_compound]:
-                    scl = []
+                matrix_1 = matrix.loc[targeted_compound].to_frame()
+                matrix_1["ion"] = matrix_1.index.tolist()
+                matrix_1["ion"] = matrix_1["ion"].astype(int)
+                matrix_1[targeted_compound] = matrix_1[targeted_compound].astype(
+                    float
+                )
+                matrix_1[targeted_compound] = np.where(
+                    matrix_1[targeted_compound] < min_ion_intensity,
+                    0,
+                    matrix_1[targeted_compound],
+                )
+                matrix_1 = matrix_1.loc[matrix_1[targeted_compound] > 0, :]
+
+                if matrix_1.shape[0] < 2:
+                    combination_result_df.loc[
+                        targeted_compound, "Ion_Combination"
+                    ] = "NA"
+                    combination_result_df.loc[targeted_compound, "Note"] = (
+                        "No adjacent compounds; "
+                        "The available number of ions is less "
+                        "than 2, the compound is excluded"
+                    )
+                else:
+                    matrix_1 = calculate_solo_compound_combination_score(
+                        matrix_1, prefer_mz_threshold
+                    )
+
+                    if matrix_1.shape[0] <= min_ion_num:
+                        combination_list = matrix_1.index.values.tolist()
+                    else:
+                        combination_list = matrix_1.iloc[
+                            0:min_ion_num, :
+                        ].index.values.tolist()
+                    combination_result_df.loc[
+                        str(targeted_compound), "Ion_Combination"
+                    ] = combination_list
+                    solo_list.append(targeted_compound)
+            else:
+                temp_df = matrix.loc[nearby_compound_list]
+                temp_df = temp_df.astype(float)
+                temp_df.loc[targeted_compound, :] = np.where(
+                    temp_df.loc[targeted_compound, :] < min_ion_intensity,
+                    0,
+                    temp_df.loc[targeted_compound, :],
+                )
+                temp_df = temp_df.loc[:, temp_df.loc[targeted_compound, :] > 0]
+
+                if temp_df.shape[1] < 2:
+                    combination_result_df.loc[
+                        targeted_compound, "Ion_Combination"
+                    ] = "NA"
+                    combination_result_df.loc[targeted_compound, "Note"] = (
+                        "The available number of ions is less "
+                        "than 2, the compound is excluded"
+                    )
+                else:
+                    similar_compound_list = []
+                    result_df_1 = calculate_similarity(
+                        targeted_compound, temp_df, fr_factor
+                    )
+                    for index, row in result_df_1.iterrows():
+                        if float(row) >= similarity_threshold:
+                            similar_compound_list.append(index)
+
                     combination_result_df.loc[
                         targeted_compound, "Similar_Compound_List"
-                    ] = scl
-                    combination_result_df.loc[targeted_compound, "SCL_Note"] = (
-                        "No adjacent compounds."
-                    )
+                    ] = similar_compound_list
+                    temp_df.drop(index=similar_compound_list, inplace=True)
 
-                    matrix_1 = matrix.loc[targeted_compound].to_frame()
-                    matrix_1["ion"] = matrix_1.index.tolist()
-                    matrix_1["ion"] = matrix_1["ion"].astype(int)
-                    matrix_1[targeted_compound] = matrix_1[targeted_compound].astype(
-                        float
-                    )
-                    matrix_1[targeted_compound] = np.where(
-                        matrix_1[targeted_compound] < min_ion_intensity,
-                        0,
-                        matrix_1[targeted_compound],
-                    )
-                    matrix_1 = matrix_1.loc[matrix_1[targeted_compound] > 0, :]
+                    if temp_df.shape[0] == 1:
+                        temp_name = ((temp_df.index.values).tolist())[0]
+                        if temp_name == targeted_compound:
+                            matrix_1 = matrix.loc[targeted_compound].to_frame()
+                            matrix_1["ion"] = matrix_1.index.tolist()
+                            matrix_1["ion"] = matrix_1["ion"].astype(int)
+                            matrix_1[targeted_compound] = matrix_1[
+                                targeted_compound
+                            ].astype(float)
+                            matrix_1[targeted_compound] = np.where(
+                                matrix_1[targeted_compound] < min_ion_intensity,
+                                0,
+                                matrix_1[targeted_compound],
+                            )
+                            matrix_1 = matrix_1.loc[
+                                matrix_1[targeted_compound] > 0, :
+                            ]
 
-                    if matrix_1.shape[0] < 2:
-                        combination_result_df.loc[
-                            targeted_compound, "Ion_Combination"
-                        ] = "NA"
-                        combination_result_df.loc[targeted_compound, "Note"] = (
-                            "No adjacent compounds; "
-                            "The available number of ions is less "
-                            "than 2, the compound is excluded"
-                        )
-                    else:
-                        matrix_1 = self.calculate_solo_compound_combination_score(
-                            matrix_1, prefer_mz_threshold
-                        )
-
-                        if matrix_1.shape[0] <= min_ion_num:
-                            combination_list = matrix_1.index.values.tolist()
-                        else:
-                            combination_list = matrix_1.iloc[
-                                0:min_ion_num, :
-                            ].index.values.tolist()
-                        combination_result_df.loc[
-                            str(targeted_compound), "Ion_Combination"
-                        ] = combination_list
-                        solo_list.append(targeted_compound)
-                else:
-                    temp_df = matrix.loc[nearby_compound_list]
-                    temp_df = temp_df.astype(float)
-                    temp_df.loc[targeted_compound, :] = np.where(
-                        temp_df.loc[targeted_compound, :] < min_ion_intensity,
-                        0,
-                        temp_df.loc[targeted_compound, :],
-                    )
-                    temp_df = temp_df.loc[:, temp_df.loc[targeted_compound, :] > 0]
-
-                    if temp_df.shape[1] < 2:
-                        combination_result_df.loc[
-                            targeted_compound, "Ion_Combination"
-                        ] = "NA"
-                        combination_result_df.loc[targeted_compound, "Note"] = (
-                            "The available number of ions is less "
-                            "than 2, the compound is excluded"
-                        )
-                    else:
-                        similar_compound_list = []
-                        result_df_1 = calculate_similarity(
-                            targeted_compound, temp_df, fr_factor
-                        )
-                        for index, row in result_df_1.iterrows():
-                            if float(row) >= similarity_threshold:
-                                similar_compound_list.append(index)
-
-                        combination_result_df.loc[
-                            targeted_compound, "Similar_Compound_List"
-                        ] = similar_compound_list
-                        temp_df.drop(index=similar_compound_list, inplace=True)
-
-                        if temp_df.shape[0] == 1:
-                            temp_name = ((temp_df.index.values).tolist())[0]
-                            if temp_name == targeted_compound:
-                                matrix_1 = matrix.loc[targeted_compound].to_frame()
-                                matrix_1["ion"] = matrix_1.index.tolist()
-                                matrix_1["ion"] = matrix_1["ion"].astype(int)
-                                matrix_1[targeted_compound] = matrix_1[
-                                    targeted_compound
-                                ].astype(float)
-                                matrix_1[targeted_compound] = np.where(
-                                    matrix_1[targeted_compound] < min_ion_intensity,
-                                    0,
-                                    matrix_1[targeted_compound],
+                            if matrix_1.shape[0] < 2:
+                                combination_result_df.loc[
+                                    targeted_compound, "Ion_Combination"
+                                ] = "NA"
+                                combination_result_df.loc[targeted_compound, "Note"] = (
+                                    "The available number of ions is less "
+                                    "than 2, the compound is discarded"
                                 )
-                                matrix_1 = matrix_1.loc[
-                                    matrix_1[targeted_compound] > 0, :
-                                ]
+                            else:
+                                matrix_1 = calculate_solo_compound_combination_score(
+                                    matrix_1, prefer_mz_threshold
+                                )
 
-                                if matrix_1.shape[0] < 2:
-                                    combination_result_df.loc[
-                                        targeted_compound, "Ion_Combination"
-                                    ] = "NA"
-                                    combination_result_df.loc[
-                                        targeted_compound, "Note"
-                                    ] = (
-                                        "The available number of ions is less "
-                                        "than 2, the compound is discarded"
+                                if matrix_1.shape[0] <= min_ion_num:
+                                    combination_list = (
+                                        matrix_1.index.values.tolist()
                                     )
                                 else:
-                                    matrix_1 = (
-                                        self.calculate_solo_compound_combination_score(
-                                            matrix_1, prefer_mz_threshold
-                                        )
-                                    )
+                                    combination_list = matrix_1.iloc[
+                                        0:min_ion_num, :
+                                    ].index.values.tolist()
+                                combination_result_df.loc[
+                                    str(targeted_compound), "Ion_Combination"
+                                ] = combination_list
+                                solo_list.append(targeted_compound)
+                    else:
+                        col_name = list(temp_df.columns)
+                        col_name = list(map(int, col_name))
+                        new_com = [[x] for x in col_name]
 
-                                    if matrix_1.shape[0] <= min_ion_num:
-                                        combination_list = (
-                                            matrix_1.index.values.tolist()
-                                        )
-                                    else:
-                                        combination_list = matrix_1.iloc[
-                                            0:min_ion_num, :
-                                        ].index.values.tolist()
-                                    combination_result_df.loc[
-                                        str(targeted_compound), "Ion_Combination"
-                                    ] = combination_list
-                                    solo_list.append(targeted_compound)
-                        else:
-                            col_name = list(temp_df.columns)
-                            col_name = list(map(int, col_name))
-                            new_com = [[x] for x in col_name]
-
-                            difference_count_df_1 = (
-                                calculate_average_score_and_difference_count(
-                                    targeted_compound,
-                                    new_com,
-                                    temp_df,
-                                    similarity_threshold,
-                                    fr_factor,
-                                )
+                        difference_count_df_1 = (
+                            calculate_average_score_and_difference_count(
+                                targeted_compound,
+                                new_com,
+                                temp_df,
+                                similarity_threshold,
+                                fr_factor,
                             )
+                        )
 
-                            combination_df = difference_count_df_1[
-                                difference_count_df_1["Diff_Count"]
-                                >= difference_count_df_1.iat[0, 0]
+                        combination_df = difference_count_df_1[
+                            difference_count_df_1["Diff_Count"]
+                            >= difference_count_df_1.iat[0, 0]
+                        ]
+                        if combination_df.shape[0] > 5:
+                            combination_df = combination_df.sort_values(
+                                by="Similar_Compound_Ave_Score",
+                                inplace=False,
+                                ascending=True,
+                            )
+                            combination_df = combination_df[
+                                combination_df["Similar_Compound_Ave_Score"]
+                                >= combination_df.iat[0, 1]
                             ]
                             if combination_df.shape[0] > 5:
-                                combination_df = combination_df.sort_values(
-                                    by="Similar_Compound_Ave_Score",
-                                    inplace=False,
-                                    ascending=True,
+                                combination_df = calculate_combination_score(
+                                    combination_df,
+                                    targeted_compound,
+                                    temp_df,
+                                    prefer_mz_threshold,
                                 )
-                                combination_df = combination_df[
-                                    combination_df["Similar_Compound_Ave_Score"]
-                                    >= combination_df.iat[0, 1]
-                                ]
-                                if combination_df.shape[0] > 5:
-                                    combination_df = self.calculate_combination_score(
-                                        combination_df,
-                                        targeted_compound,
-                                        temp_df,
-                                        prefer_mz_threshold,
-                                    )
-                                    combination_df = combination_df.sort_values(
-                                        by="com_score", inplace=False, ascending=False
-                                    )
-                                    combination_df = combination_df[:5]
-                                else:
-                                    combination_df = combination_df
+                                combination_df = combination_df.sort_values(
+                                    by="com_score", inplace=False, ascending=False
+                                )
+                                combination_df = combination_df[:5]
                             else:
                                 combination_df = combination_df
-                            ion_list = list(temp_df)
-                            combination_array = combination_df.index.values
-                            n = 0
-                            ion_num = 1
+                        else:
+                            combination_df = combination_df
+                        ion_list = list(temp_df)
+                        combination_array = combination_df.index.values
+                        n = 0
+                        ion_num = 1
 
-                            flag = True
+                        flag = True
 
-                            while True:
-                                if (
-                                    int((combination_df.max())[0])
-                                    >= int(temp_df.shape[0] - 1)
-                                    and ion_num >= min_ion_num
-                                ):
-                                    break
-                                elif flag == False:
-                                    break
-                                else:
-                                    n = n + 1
-                                    total_list = []
-                                    new_total = []
+                        while True:
+                            if (
+                                int((combination_df.max())[0])
+                                >= int(temp_df.shape[0] - 1)
+                                and ion_num >= min_ion_num
+                            ):
+                                break
+                            elif flag == False:
+                                break
+                            else:
+                                n = n + 1
+                                total_list = []
+                                new_total = []
 
-                                    for ion_combination in combination_array:
+                                for ion_combination in combination_array:
 
-                                        ion_combination_list = re.findall(
-                                            "\d+\.?\d*", ion_combination
-                                        )
-                                        ion_combination_list = list(
-                                            map(int, ion_combination_list)
-                                        )
-                                        candidate_list = [
-                                            i
-                                            for i in ion_list
-                                            if i not in ion_combination_list
-                                        ]
+                                    ion_combination_list = re.findall(
+                                        "\d+\.?\d*", ion_combination
+                                    )
+                                    ion_combination_list = list(
+                                        map(int, ion_combination_list)
+                                    )
+                                    candidate_list = [
+                                        i
+                                        for i in ion_list
+                                        if i not in ion_combination_list
+                                    ]
 
-                                        if candidate_list == []:
-                                            if int((combination_df.max())[0]) >= int(
-                                                temp_df.shape[0] - 1
-                                            ):
+                                    if candidate_list == []:
+                                        if int((combination_df.max())[0]) >= int(
+                                            temp_df.shape[0] - 1
+                                        ):
+                                            if combination_df.shape[0] > 1:
+                                                combination_df = combination_df.sort_values(
+                                                    by="Similar_Compound_Ave_Score",
+                                                    inplace=False,
+                                                    ascending=True,
+                                                )
+                                                combination_df = combination_df[
+                                                    combination_df[
+                                                        "Similar_Compound_Ave_Score"
+                                                    ]
+                                                    >= combination_df.iat[0, 1]
+                                                ]
                                                 if combination_df.shape[0] > 1:
-                                                    combination_df = combination_df.sort_values(
-                                                        by="Similar_Compound_Ave_Score",
-                                                        inplace=False,
-                                                        ascending=True,
+                                                    combination_df = calculate_combination_score(
+                                                        combination_df,
+                                                        targeted_compound,
+                                                        temp_df,
+                                                        prefer_mz_threshold,
+                                                    )
+                                                    combination_df = (
+                                                        combination_df.sort_values(
+                                                            by="com_score",
+                                                            inplace=False,
+                                                            ascending=False,
+                                                        )
                                                     )
                                                     combination_df = combination_df[
-                                                        combination_df[
-                                                            "Similar_Compound_Ave_Score"
-                                                        ]
-                                                        >= combination_df.iat[0, 1]
+                                                        :1
                                                     ]
-                                                    if combination_df.shape[0] > 1:
-                                                        combination_df = self.calculate_combination_score(
-                                                            combination_df,
-                                                            targeted_compound,
-                                                            temp_df,
-                                                            prefer_mz_threshold,
-                                                        )
-                                                        combination_df = (
-                                                            combination_df.sort_values(
-                                                                by="com_score",
-                                                                inplace=False,
-                                                                ascending=False,
-                                                            )
-                                                        )
-                                                        combination_df = combination_df[
-                                                            :1
-                                                        ]
-                                                    else:
-                                                        combination_df = combination_df
                                                 else:
                                                     combination_df = combination_df
-                                                combination_array = (
-                                                    combination_df.index.values
-                                                )
-                                                combination_result_df.loc[
-                                                    str(targeted_compound),
-                                                    "Ion_Combination",
-                                                ] = combination_array[0]
-                                                combination_result_df.loc[
-                                                    str(targeted_compound), "Note"
-                                                ] = "Despite the qualitative ion number is less than the defined number, its separation score reaches 1"
-                                                flag = False
-
-                                                break
-
                                             else:
-                                                combination_result_df.loc[
-                                                    str(targeted_compound),
-                                                    "Ion_Combination",
-                                                ] = "NA"
-                                                combination_result_df.loc[
-                                                    str(targeted_compound), "Note"
-                                                ] = "No ions available, this compound is discarded"
-                                                flag = False
-                                                break
+                                                combination_df = combination_df
+                                            combination_array = (
+                                                combination_df.index.values
+                                            )
+                                            combination_result_df.loc[
+                                                str(targeted_compound),
+                                                "Ion_Combination",
+                                            ] = combination_array[0]
+                                            combination_result_df.loc[
+                                                str(targeted_compound), "Note"
+                                            ] = "Despite the qualitative ion number is less than the defined number, its separation score reaches 1"
+                                            flag = False
 
-                                        elif flag == True:
+                                            break
 
-                                            for candidate in candidate_list:
-                                                temp_ion_combination_list = (
-                                                    ion_combination_list.copy()
-                                                )
-                                                temp_ion_combination_list.append(
-                                                    candidate
-                                                )
-                                                total_list.append(
-                                                    temp_ion_combination_list
-                                                )
-                                                temp_ion_combination_list = []
-                                            for i in total_list:
-                                                i = list(map(int, i))
-                                                i.sort()
-                                                if i not in new_total:
-                                                    new_total.append(i)
+                                        else:
+                                            combination_result_df.loc[
+                                                str(targeted_compound),
+                                                "Ion_Combination",
+                                            ] = "NA"
+                                            combination_result_df.loc[
+                                                str(targeted_compound), "Note"
+                                            ] = "No ions available, this compound is discarded"
+                                            flag = False
+                                            break
+
+                                    elif flag == True:
+
+                                        for candidate in candidate_list:
+                                            temp_ion_combination_list = (
+                                                ion_combination_list.copy()
+                                            )
+                                            temp_ion_combination_list.append(
+                                                candidate
+                                            )
+                                            total_list.append(
+                                                temp_ion_combination_list
+                                            )
+                                            temp_ion_combination_list = []
+                                        for i in total_list:
+                                            i = list(map(int, i))
+                                            i.sort()
+                                            if i not in new_total:
+                                                new_total.append(i)
                                     if flag == True:
 
                                         difference_count_df_2 = calculate_average_score_and_difference_count(
@@ -696,7 +678,7 @@ class GetMethod:
                                             ]
                                             if combination_df.shape[0] > 1:
                                                 combination_df = (
-                                                    self.calculate_combination_score(
+                                                    calculate_combination_score(
                                                         combination_df,
                                                         targeted_compound,
                                                         temp_df,
@@ -725,392 +707,392 @@ class GetMethod:
                                 combination_result_df.loc[
                                     str(targeted_compound), "Ion_Combination"
                                 ] = combination_array[0]
-            combination_result_df.to_csv(
-                Path(outpath) / "combination_results.csv",
-                index=True,
-                index_label="Name",
-            )
+        combination_result_df.to_csv(
+            Path(outpath) / "combination_results.csv",
+            index=True,
+            index_label="Name",
+        )
 
-        error_df = pd.DataFrame(columns=["Name", "Error"])
-        name_list_total = []
-        num = []
-        name_list = combination_result_df.index.values.tolist()
-        RT_list_total = []
-        for name in name_list:
-            if name in RT_data.index.values.tolist():
-                if type(combination_result_df.loc[name, "Ion_Combination"]) == str:
-                    ion_str = combination_result_df.loc[name, "Ion_Combination"]
-                    ion_list = re.findall("\d+\.?\d*", ion_str)
-                    ion_list = list(map(int, ion_list))
-                    for x in range(0, len(ion_list)):
-                        name_list_total.append(name)
-                        RT_list_total.append(RT_data.loc[name, "RT"])
-                        num.append(ion_list[x])
-                elif type(combination_result_df.loc[name, "Ion_Combination"]) == list:
-                    ion_list = [
-                        int(x)
-                        for x in combination_result_df.loc[name, "Ion_Combination"]
-                    ]
-                    for x in range(0, len(ion_list)):
-                        name_list_total.append(name)
-                        RT_list_total.append(RT_data.loc[name, "RT"])
-                        num.append(ion_list[x])
-                else:
-                    error_df.loc[len(error_df)] = [
-                        name,
-                        "The ion group format is incorrect.",
-                    ]
+    error_df = pd.DataFrame(columns=["Name", "Error"])
+    name_list_total = []
+    num = []
+    name_list = combination_result_df.index.values.tolist()
+    RT_list_total = []
+    for name in name_list:
+        if name in RT_data.index.values.tolist():
+            if type(combination_result_df.loc[name, "Ion_Combination"]) == str:
+                ion_str = combination_result_df.loc[name, "Ion_Combination"]
+                ion_list = re.findall("\d+\.?\d*", ion_str)
+                ion_list = list(map(int, ion_list))
+                for x in range(0, len(ion_list)):
+                    name_list_total.append(name)
+                    RT_list_total.append(RT_data.loc[name, "RT"])
+                    num.append(ion_list[x])
+            elif type(combination_result_df.loc[name, "Ion_Combination"]) == list:
+                ion_list = [
+                    int(x)
+                    for x in combination_result_df.loc[name, "Ion_Combination"]
+                ]
+                for x in range(0, len(ion_list)):
+                    name_list_total.append(name)
+                    RT_list_total.append(RT_data.loc[name, "RT"])
+                    num.append(ion_list[x])
             else:
                 error_df.loc[len(error_df)] = [
                     name,
-                    "This compound is not in the RT list.",
+                    "The ion group format is incorrect.",
                 ]
+        else:
+            error_df.loc[len(error_df)] = [
+                name,
+                "This compound is not in the RT list.",
+            ]
 
-        length = len(name_list_total)
+    length = len(name_list_total)
 
-        data = {"RT": RT_list_total, "ion": num}
+    data = {"RT": RT_list_total, "ion": num}
 
-        ion_rt = pd.DataFrame(data, index=name_list_total)
+    ion_rt = pd.DataFrame(data, index=name_list_total)
 
-        ion_rt.sort_values(by="RT", inplace=True, ascending=True)
-        for idx, row in ion_rt.iterrows():
-            if row["RT"] > retention_time_max:
-                ion_rt.loc[idx, "RT"] = retention_time_max
+    ion_rt.sort_values(by="RT", inplace=True, ascending=True)
+    for idx, row in ion_rt.iterrows():
+        if row["RT"] > retention_time_max:
+            ion_rt.loc[idx, "RT"] = retention_time_max
 
-        ion_rt.to_csv(Path(outpath) / "ion_rt_data.csv", index=True, index_label="Name")
-        rt_index = [
-            i * 0.5 / 60 for i in range(0, int(retention_time_max * 120) + 1, 1)
-        ]
-        df = pd.DataFrame(
-            index=rt_index, columns=[i for i in range(mz_min, mz_max + 1)]
-        )
-        for i, row in ion_rt.iterrows():
-            df.loc[
-                (df.index > row[0] - rt_window) & (df.index < row[0] + rt_window),
-                row[1],
-            ] = 1
+    ion_rt.to_csv(Path(outpath) / "ion_rt_data.csv", index=True, index_label="Name")
+    rt_index = [
+        i * 0.5 / 60 for i in range(0, int(retention_time_max * 120) + 1, 1)
+    ]
+    df = pd.DataFrame(
+        index=rt_index, columns=[i for i in range(mz_min, mz_max + 1)]
+    )
+    for i, row in ion_rt.iterrows():
+        df.loc[
+            (df.index > row[0] - rt_window) & (df.index < row[0] + rt_window),
+            row[1],
+        ] = 1
 
-        df = df[df.index > solvent_delay]
+    df = df[df.index > solvent_delay]
 
-        df["sum"] = df.sum(axis=1)
-        df["group"] = df.apply(self.group_rows, axis=1)
+    df["sum"] = df.sum(axis=1)
+    df["group"] = df.apply(group_rows, axis=1)
 
-        df["group_id"] = ""
-        df.iloc[0, -1] = 1
-        n = 1
-        m = 2
-        while n <= len(df) - 1:
-            if df.iloc[n, -2] == df.iloc[n - 1, -2]:
-                df.iloc[n, -1] = df.iloc[n - 1, -1]
-                n = n + 1
-            else:
-                df.iloc[n, -1] = m
-                n = n + 1
-                m = m + 1
+    df["group_id"] = ""
+    df.iloc[0, -1] = 1
+    n = 1
+    m = 2
+    while n <= len(df) - 1:
+        if df.iloc[n, -2] == df.iloc[n - 1, -2]:
+            df.iloc[n, -1] = df.iloc[n - 1, -1]
+            n = n + 1
+        else:
+            df.iloc[n, -1] = m
+            n = n + 1
+            m = m + 1
 
-        group_list = df["group_id"].unique().tolist()
+    group_list = df["group_id"].unique().tolist()
 
-        for i in group_list:
-            if i in df["group_id"].values.tolist():
-                first_row_sum = df.loc[df["group_id"] == i].iloc[0, -3]
-                if first_row_sum == 0:
-                    if i - 1 and i + 1 in group_list:
-                        if (
-                            df.loc[df["group_id"] == i - 1].iloc[0, -3]
-                            > df.loc[df["group_id"] == i + 1].iloc[0, -3]
-                        ):
-                            mask = (df["group_id"] == i) | (df["group_id"] == i + 1)
-                            selected_rows = df.loc[mask]
-                            selected_rows = selected_rows.iloc[:, :-3].apply(
-                                self.replace_1
-                            )
-                            df.loc[mask] = selected_rows
-                        else:
-                            mask = (df["group_id"] == i - 1) | (df["group_id"] == i)
-                            selected_rows = df.loc[mask]
-                            selected_rows = selected_rows.iloc[:, :-3].apply(
-                                self.replace_1
-                            )
-                            df.loc[mask] = selected_rows
-                    elif i + 1 in group_list:
+    for i in group_list:
+        if i in df["group_id"].values.tolist():
+            first_row_sum = df.loc[df["group_id"] == i].iloc[0, -3]
+            if first_row_sum == 0:
+                if i - 1 and i + 1 in group_list:
+                    if (
+                        df.loc[df["group_id"] == i - 1].iloc[0, -3]
+                        > df.loc[df["group_id"] == i + 1].iloc[0, -3]
+                    ):
                         mask = (df["group_id"] == i) | (df["group_id"] == i + 1)
                         selected_rows = df.loc[mask]
-                        selected_rows = selected_rows.iloc[:, :-3].apply(self.replace_1)
-                        df.loc[mask] = selected_rows
-                    elif i - 1 in group_list:
-                        mask = (df["group_id"] == i - 1) | (df["group_id"] == i)
-                        selected_rows = df.loc[mask]
-                        selected_rows = selected_rows.iloc[:, :-3].apply(self.replace_1)
+                        selected_rows = selected_rows.iloc[:, :-3].apply(
+                            replace_1
+                        )
                         df.loc[mask] = selected_rows
                     else:
-                        print(
-                            "An error occurred when attempting to merge with 0 data points, and it resulted in the "
-                            "following error message: group_id =",
-                            i,
+                        mask = (df["group_id"] == i - 1) | (df["group_id"] == i)
+                        selected_rows = df.loc[mask]
+                        selected_rows = selected_rows.iloc[:, :-3].apply(
+                            replace_1
                         )
+                        df.loc[mask] = selected_rows
+                elif i + 1 in group_list:
+                    mask = (df["group_id"] == i) | (df["group_id"] == i + 1)
+                    selected_rows = df.loc[mask]
+                    selected_rows = selected_rows.iloc[:, :-3].apply(replace_1)
+                    df.loc[mask] = selected_rows
+                elif i - 1 in group_list:
+                    mask = (df["group_id"] == i - 1) | (df["group_id"] == i)
+                    selected_rows = df.loc[mask]
+                    selected_rows = selected_rows.iloc[:, :-3].apply(replace_1)
+                    df.loc[mask] = selected_rows
+                else:
+                    print(
+                        "An error occurred when attempting to merge with 0 data points, and it resulted in the "
+                        "following error message: group_id =",
+                        i,
+                    )
 
-                    break
+                break
 
-        df["sum"] = df.iloc[:, :-3].sum(axis=1)
-        df["group"] = df.apply(self.group_rows, axis=1)
-        df["group_id"] = ""
-        df.iloc[0, -1] = 1
-        n = 1
-        m = 2
-        while n <= len(df) - 1:
-            if df.iloc[n, -2] == df.iloc[n - 1, -2]:
-                df.iloc[n, -1] = df.iloc[n - 1, -1]
-                n = n + 1
-            else:
-                df.iloc[n, -1] = m
-                n = n + 1
-                m = m + 1
+    df["sum"] = df.iloc[:, :-3].sum(axis=1)
+    df["group"] = df.apply(group_rows, axis=1)
+    df["group_id"] = ""
+    df.iloc[0, -1] = 1
+    n = 1
+    m = 2
+    while n <= len(df) - 1:
+        if df.iloc[n, -2] == df.iloc[n - 1, -2]:
+            df.iloc[n, -1] = df.iloc[n - 1, -1]
+            n = n + 1
+        else:
+            df.iloc[n, -1] = m
+            n = n + 1
+            m = m + 1
+
+    group_list = df["group_id"].unique().tolist()
+    while len(group_list) > sim_sig_max:
+
+        result_df = pd.DataFrame(
+            columns=["pattern", "sensitivity_damage", "row_number"]
+        )
+        i = 1
+
+        while i < df["group_id"].max():
+            temp_df = df[(df["group_id"] == i) | (df["group_id"] == i + 1)]
+            old_ion_sum = temp_df["sum"].sum()
+            temp_df = temp_df.dropna(axis=1, how="all")
+            new_ion_sum = temp_df.shape[0] * (temp_df.shape[1] - 3)
+            intensity_damage = new_ion_sum - old_ion_sum
+            row_num = temp_df.shape[0]
+            result_df.loc[len(result_df)] = [i, intensity_damage, row_num]
+            i = i + 1
+
+        result_df = result_df.loc[
+            result_df["sensitivity_damage"] == result_df["sensitivity_damage"].min()
+        ]
+        if result_df.shape[0] > 1:
+            result_df.sort_values(by="row_number", inplace=True, ascending=False)
+            result_df = result_df[:1]
+        else:
+            result_df = result_df
+        n = result_df.iloc[0, 0]
+        temp_df = df[(df["group_id"] == n) | (df["group_id"] == n + 1)]
+        temp_df = temp_df.apply(replace_1)
+        temp_df["sum"] = temp_df.iloc[:, :-3].sum(axis=1)
+        temp_df["group"] = temp_df.apply(group_rows, axis=1)
+        temp_df.loc[:, "group_id"] = n
+        mask = (df["group_id"] == n) | (df["group_id"] == n + 1)
+        df.loc[mask, :] = temp_df
+
+        df["group_id"] = df["group_id"].apply(lambda x: x - 1 if x > n else x)
+
+        group_list = df["group_id"].values.tolist()
+        group_list = list(set(group_list))
+
+    df = df[df["sum"] != 0]
+
+    df["dwell_time"] = ""
+
+    for i in df["group_id"].values.tolist():
+
+        ion_num = df.loc[df["group_id"] == i, "sum"].values[0]
+        if (1000 / point_per_s) / ion_num >= min_dwell_time:
+
+            df.loc[df["group_id"] == i, "dwell_time"] = (
+                1000 / point_per_s
+            ) / ion_num
+
+        else:
+
+            df.loc[df["group_id"] == i, "dwell_time"] = min_dwell_time
+
+    df.to_csv(Path(outpath) / "SIM_seg_result.csv", index=True)
+    if convert_to_ag_method:
+
+        from lxml import etree
 
         group_list = df["group_id"].unique().tolist()
-        while len(group_list) > sim_sig_max:
+        gain_factor = 10
 
-            result_df = pd.DataFrame(
-                columns=["pattern", "sensitivity_damage", "row_number"]
-            )
-            i = 1
+        mode = "voc"  # mtb or voc
 
-            while i < df["group_id"].max():
-                temp_df = df[(df["group_id"] == i) | (df["group_id"] == i + 1)]
-                old_ion_sum = temp_df["sum"].sum()
-                temp_df = temp_df.dropna(axis=1, how="all")
-                new_ion_sum = temp_df.shape[0] * (temp_df.shape[1] - 3)
-                intensity_damage = new_ion_sum - old_ion_sum
-                row_num = temp_df.shape[0]
-                result_df.loc[len(result_df)] = [i, intensity_damage, row_num]
-                i = i + 1
+        root = etree.Element(
+            "MSAcqMethod",
+            nsmap={
+                "xsi": "http://www.w3.org/2001/XMLSchema-instance",
+                "xsd": "http://www.w3.org/2001/XMLSchema",
+            },
+        )
 
-            result_df = result_df.loc[
-                result_df["sensitivity_damage"] == result_df["sensitivity_damage"].min()
-            ]
-            if result_df.shape[0] > 1:
-                result_df.sort_values(by="row_number", inplace=True, ascending=False)
-                result_df = result_df[:1]
-            else:
-                result_df = result_df
-            n = result_df.iloc[0, 0]
-            temp_df = df[(df["group_id"] == n) | (df["group_id"] == n + 1)]
-            temp_df = temp_df.apply(self.replace_1)
-            temp_df["sum"] = temp_df.iloc[:, :-3].sum(axis=1)
-            temp_df["group"] = temp_df.apply(self.group_rows, axis=1)
-            temp_df.loc[:, "group_id"] = n
-            mask = (df["group_id"] == n) | (df["group_id"] == n + 1)
-            df.loc[mask, :] = temp_df
+        msInstrument = etree.SubElement(root, "msInstrument")
+        msInstrument.text = "QQQ"
 
-            df["group_id"] = df["group_id"].apply(lambda x: x - 1 if x > n else x)
+        ionSource = etree.SubElement(root, "ionSource")
+        ionSource.text = "EI"
 
-            group_list = df["group_id"].values.tolist()
-            group_list = list(set(group_list))
+        tuneFile = etree.SubElement(root, "tuneFile")
+        tuneFile.text = "atunes.eiex.tune.xml"
 
-        df = df[df["sum"] != 0]
+        stopMode = etree.SubElement(root, "stopMode")
+        stopMode.text = "ByChromatographTime"
 
-        df["dwell_time"] = ""
+        stopTime = etree.SubElement(root, "stopTime")
+        stopTime.text = "1"
 
-        for i in df["group_id"].values.tolist():
+        solventDelay = etree.SubElement(root, "solventDelay")
+        solventDelay.text = str(solvent_delay)
 
-            ion_num = df.loc[df["group_id"] == i, "sum"].values[0]
-            if (1000 / point_per_s) / ion_num >= min_dwell_time:
+        collisionGasOn = etree.SubElement(root, "collisionGasOn")
+        collisionGasOn.text = "true"
 
-                df.loc[df["group_id"] == i, "dwell_time"] = (
-                    1000 / point_per_s
-                ) / ion_num
+        sourceParameters = etree.SubElement(root, "sourceParameters")
 
-            else:
+        sourceParameter = etree.SubElement(sourceParameters, "sourceParameter")
 
-                df.loc[df["group_id"] == i, "dwell_time"] = min_dwell_time
+        para_id = etree.SubElement(sourceParameter, "id")
+        para_id.text = "SourceHeater"
 
-        df.to_csv(Path(outpath) / "SIM_seg_result.csv", index=True)
-        if convert_to_ag_method:
+        posPolarityValue = etree.SubElement(sourceParameter, "posPolarityValue")
+        posPolarityValue.text = "250"
 
-            from lxml import etree
+        negPolarityValue = etree.SubElement(sourceParameter, "negPolarityValue")
+        negPolarityValue.text = "250"
 
-            group_list = df["group_id"].unique().tolist()
-            gain_factor = 10
+        isTimeFilterEnabled = etree.SubElement(root, "isTimeFilterEnabled")
+        isTimeFilterEnabled.text = "true"
 
-            mode = "voc"  # mtb or voc
+        timeFilterPeakWidth = etree.SubElement(root, "timeFilterPeakWidth")
+        timeFilterPeakWidth.text = "0.0133333337"
 
-            root = etree.Element(
-                "MSAcqMethod",
-                nsmap={
-                    "xsi": "http://www.w3.org/2001/XMLSchema-instance",
-                    "xsd": "http://www.w3.org/2001/XMLSchema",
-                },
-            )
+        timeFilter = etree.SubElement(root, "timeFilter")
 
-            msInstrument = etree.SubElement(root, "msInstrument")
-            msInstrument.text = "QQQ"
+        activeCount = etree.SubElement(timeFilter, "activeCount")
+        activeCount.text = "1"
 
-            ionSource = etree.SubElement(root, "ionSource")
-            ionSource.text = "EI"
+        definition = etree.SubElement(timeFilter, "definition")
 
-            tuneFile = etree.SubElement(root, "tuneFile")
-            tuneFile.text = "atunes.eiex.tune.xml"
+        time = etree.SubElement(definition, "time")
+        time.text = "0"
 
-            stopMode = etree.SubElement(root, "stopMode")
-            stopMode.text = "ByChromatographTime"
+        peakWidth = etree.SubElement(definition, "peakWidth")
+        peakWidth.text = "0.0133333337"
 
-            stopTime = etree.SubElement(root, "stopTime")
-            stopTime.text = "1"
+        definition_2 = etree.SubElement(timeFilter, "definition")
 
-            solventDelay = etree.SubElement(root, "solventDelay")
-            solventDelay.text = str(solvent_delay)
+        time_2 = etree.SubElement(definition_2, "time")
+        time_2.text = "10"
 
-            collisionGasOn = etree.SubElement(root, "collisionGasOn")
-            collisionGasOn.text = "true"
+        peakWidth_2 = etree.SubElement(definition_2, "peakWidth")
+        peakWidth_2.text = "0.05"
 
-            sourceParameters = etree.SubElement(root, "sourceParameters")
+        useGain = etree.SubElement(root, "useGain")
+        useGain.text = "true"
 
-            sourceParameter = etree.SubElement(sourceParameters, "sourceParameter")
+        if mode == "mtb":
 
-            para_id = etree.SubElement(sourceParameter, "id")
-            para_id.text = "SourceHeater"
+            pass
 
-            posPolarityValue = etree.SubElement(sourceParameter, "posPolarityValue")
-            posPolarityValue.text = "250"
+        else:
 
-            negPolarityValue = etree.SubElement(sourceParameter, "negPolarityValue")
-            negPolarityValue.text = "250"
+            enableNR = etree.SubElement(root, "enableNR")
+            enableNR.text = "true"
 
-            isTimeFilterEnabled = etree.SubElement(root, "isTimeFilterEnabled")
-            isTimeFilterEnabled.text = "true"
+        timeSegments = etree.SubElement(root, "timeSegments")
 
-            timeFilterPeakWidth = etree.SubElement(root, "timeFilterPeakWidth")
-            timeFilterPeakWidth.text = "0.0133333337"
+        index_n = 0
+        for i in group_list:
 
-            timeFilter = etree.SubElement(root, "timeFilter")
+            timeSegment = etree.SubElement(timeSegments, "timeSegment")
 
-            activeCount = etree.SubElement(timeFilter, "activeCount")
-            activeCount.text = "1"
+            index = etree.SubElement(timeSegment, "index")
+            index_n += 1
+            index.text = str(int(index_n))
 
-            definition = etree.SubElement(timeFilter, "definition")
+            startTime = etree.SubElement(timeSegment, "startTime")
+            startTime.text = "{:.4f}".format(df.index[df["group_id"] == i][0])
 
-            time = etree.SubElement(definition, "time")
-            time.text = "0"
+            isDataSaved = etree.SubElement(timeSegment, "isDataSaved")
+            isDataSaved.text = "true"
 
-            peakWidth = etree.SubElement(definition, "peakWidth")
-            peakWidth.text = "0.0133333337"
+            scanSegments = etree.SubElement(timeSegment, "scanSegments")
 
-            definition_2 = etree.SubElement(timeFilter, "definition")
+            scanSegment = etree.SubElement(scanSegments, "scanSegment")
 
-            time_2 = etree.SubElement(definition_2, "time")
-            time_2.text = "10"
+            seg_index = etree.SubElement(scanSegment, "index")
+            seg_index.text = "1"
 
-            peakWidth_2 = etree.SubElement(definition_2, "peakWidth")
-            peakWidth_2.text = "0.05"
+            scanType = etree.SubElement(scanSegment, "scanType")
+            scanType.text = "MS2SIM"
 
-            useGain = etree.SubElement(root, "useGain")
-            useGain.text = "true"
+            scanElements = etree.SubElement(scanSegment, "scanElements")
 
-            if mode == "mtb":
+            temp_df = df[(df["group_id"] == i)].copy()
+            dwell_time = round(temp_df.iloc[0, -1], 1)
+            temp_df = temp_df.dropna(axis=1, how="all")
+            ion_list = list(temp_df.iloc[:, :-4].columns)
+            ion_list.sort(reverse=True)
 
-                pass
+            for n, ion in enumerate(ion_list, start=1):
+                scanElement = etree.SubElement(scanElements, "scanElement")
 
-            else:
+                ele_index = etree.SubElement(scanElement, "index")
+                ele_index.text = str(n)
 
-                enableNR = etree.SubElement(root, "enableNR")
-                enableNR.text = "true"
+                compoundName = etree.SubElement(scanElement, "compoundName")
+                compoundName.text = "seg_{}_ion_{}".format(i, ion)
 
-            timeSegments = etree.SubElement(root, "timeSegments")
+                isISTD = etree.SubElement(scanElement, "isISTD")
+                isISTD.text = "false"
 
-            index_n = 0
-            for i in group_list:
+                ms2LowMz = etree.SubElement(scanElement, "ms2LowMz")
+                ms2LowMz.text = str(ion)
 
-                timeSegment = etree.SubElement(timeSegments, "timeSegment")
+                ms2Res = etree.SubElement(scanElement, "ms2Res")
+                ms2Res.text = "LowRes"
 
-                index = etree.SubElement(timeSegment, "index")
-                index_n += 1
-                index.text = str(int(index_n))
+                dwell = etree.SubElement(scanElement, "dwell")
+                dwell.text = str(dwell_time)
 
-                startTime = etree.SubElement(timeSegment, "startTime")
-                startTime.text = "{:.4f}".format(df.index[df["group_id"] == i][0])
+                gain = etree.SubElement(scanElement, "gain")
+                gain.text = str(gain_factor)
 
-                isDataSaved = etree.SubElement(timeSegment, "isDataSaved")
-                isDataSaved.text = "true"
+        instrumentCurves = etree.SubElement(root, "instrumentCurves")
 
-                scanSegments = etree.SubElement(timeSegment, "scanSegments")
+        samplingRate = etree.SubElement(instrumentCurves, "samplingRate")
+        samplingRate.text = "5"
 
-                scanSegment = etree.SubElement(scanSegments, "scanSegment")
+        chromatograms = etree.SubElement(root, "chromatograms")
 
-                seg_index = etree.SubElement(scanSegment, "index")
-                seg_index.text = "1"
+        chromatogram = etree.SubElement(chromatograms, "chromatogram")
 
-                scanType = etree.SubElement(scanSegment, "scanType")
-                scanType.text = "MS2SIM"
+        chrom_index = etree.SubElement(chromatogram, "index")
+        chrom_index.text = "1"
 
-                scanElements = etree.SubElement(scanSegment, "scanElements")
+        chromType = etree.SubElement(chromatogram, "chromType")
+        chromType.text = "TIC"
 
-                temp_df = df[(df["group_id"] == i)].copy()
-                dwell_time = round(temp_df.iloc[0, -1], 1)
-                temp_df = temp_df.dropna(axis=1, how="all")
-                ion_list = list(temp_df.iloc[:, :-4].columns)
-                ion_list.sort(reverse=True)
+        label = etree.SubElement(chromatogram, "label")
+        label.text = "TIC"
 
-                for n, ion in enumerate(ion_list, start=1):
-                    scanElement = etree.SubElement(scanElements, "scanElement")
+        offset = etree.SubElement(chromatogram, "offset")
+        offset.text = "0"
 
-                    ele_index = etree.SubElement(scanElement, "index")
-                    ele_index.text = str(n)
+        yRange = etree.SubElement(chromatogram, "yRange")
+        yRange.text = "1E+07"
 
-                    compoundName = etree.SubElement(scanElement, "compoundName")
-                    compoundName.text = "seg_{}_ion_{}".format(i, ion)
+        defaultExtractionWindow = etree.SubElement(
+            chromatograms, "defaultExtractionWindow"
+        )
 
-                    isISTD = etree.SubElement(scanElement, "isISTD")
-                    isISTD.text = "false"
+        minus = etree.SubElement(defaultExtractionWindow, "minus")
+        minus.text = "0.3"
 
-                    ms2LowMz = etree.SubElement(scanElement, "ms2LowMz")
-                    ms2LowMz.text = str(ion)
+        plus = etree.SubElement(defaultExtractionWindow, "plus")
+        plus.text = "0.7"
 
-                    ms2Res = etree.SubElement(scanElement, "ms2Res")
-                    ms2Res.text = "LowRes"
+        etree.indent(root, space="  ", level=0)
 
-                    dwell = etree.SubElement(scanElement, "dwell")
-                    dwell.text = str(dwell_time)
-
-                    gain = etree.SubElement(scanElement, "gain")
-                    gain.text = str(gain_factor)
-
-            instrumentCurves = etree.SubElement(root, "instrumentCurves")
-
-            samplingRate = etree.SubElement(instrumentCurves, "samplingRate")
-            samplingRate.text = "5"
-
-            chromatograms = etree.SubElement(root, "chromatograms")
-
-            chromatogram = etree.SubElement(chromatograms, "chromatogram")
-
-            chrom_index = etree.SubElement(chromatogram, "index")
-            chrom_index.text = "1"
-
-            chromType = etree.SubElement(chromatogram, "chromType")
-            chromType.text = "TIC"
-
-            label = etree.SubElement(chromatogram, "label")
-            label.text = "TIC"
-
-            offset = etree.SubElement(chromatogram, "offset")
-            offset.text = "0"
-
-            yRange = etree.SubElement(chromatogram, "yRange")
-            yRange.text = "1E+07"
-
-            defaultExtractionWindow = etree.SubElement(
-                chromatograms, "defaultExtractionWindow"
-            )
-
-            minus = etree.SubElement(defaultExtractionWindow, "minus")
-            minus.text = "0.3"
-
-            plus = etree.SubElement(defaultExtractionWindow, "plus")
-            plus.text = "0.7"
-
-            etree.indent(root, space="  ", level=0)
-
-            with open(Path(outpath) / "qqqacqmethod.xml", "wb") as f:
-                f.write(etree.tostring(root, encoding="UTF-8", xml_declaration=True))
+        with open(Path(outpath) / "qqqacqmethod.xml", "wb") as f:
+            f.write(etree.tostring(root, encoding="UTF-8", xml_declaration=True))
 
 
 if __name__ == "__main__":
@@ -1207,8 +1189,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    method_generator = GetMethod()
-    method_generator.Main(
+    main(
         msp_path=args.msp_path,
         rt_data_path=args.rt_data_path,
         set_name_list=args.set_name_list,
