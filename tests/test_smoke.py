@@ -4,12 +4,13 @@ from pathlib import Path
 from src.ion_selection import GetMethod
 from test_data import get_test_file
 
+
 class TestSmoke(unittest.TestCase):
 
     def setUp(self):
-        self.msp_path = get_test_file('msp_file')
-        self.rt_data_path = get_test_file('rt_data')
-        self.name_list_path = get_test_file('name_list')
+        self.msp_path = get_test_file("msp_file")
+        self.rt_data_path = get_test_file("rt_data")
+        self.name_list_path = get_test_file("name_list")
         self.parent_dir = Path(__file__).resolve().parent.parent
         self.outpath = self.parent_dir / "output_data"
 
@@ -45,13 +46,19 @@ class TestSmoke(unittest.TestCase):
         )
 
         # Compare output files with ground truth
-        output_files = ["combination_results.csv", "input_data_error_info.csv", "ion_rt_data.csv", "SIM_seg_result.csv"]
+        output_files = [
+            "combination_results.csv",
+            "input_data_error_info.csv",
+            "ion_rt_data.csv",
+            "SIM_seg_result.csv",
+        ]
         for file in output_files:
             output_df = pd.read_csv(self.outpath / file)
             file_name = file[:-4]
             ground_truth_path = get_test_file(file_name)
             ground_truth_df = pd.read_csv(ground_truth_path)
             pd.testing.assert_frame_equal(output_df, ground_truth_df, atol=1e-5)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,126 +1,132 @@
 import pandas as pd
 import numpy as np
 import re
-import argparse
 from pathlib import Path
 from matchms.importing.load_from_msp import parse_msp_file
+from .utils import CustomArgumentParser
 
 
-def read_msp(msp_file:str) -> dict:
-        """
-        Read data from an MSP file and convert it into a dictionary format using matchms.
+def read_msp(msp_file: str) -> dict:
+    """
+    Read data from an MSP file and convert it into a dictionary format using matchms.
 
-        Args:
-            msp_file (str): The path to the MSP file.
+    Args:
+        msp_file (str): The path to the MSP file.
 
-        Returns:
-            dict: A dictionary where keys are compound names and values are dictionaries of ion intensities.
-        """
-        spectra = parse_msp_file(msp_file)
-        meta = {}
-        for spectrum in spectra:
-            name = spectrum.get("params").get("name")
-            ion_intens_dic = {}
-            for mz, intensity in zip(spectrum.get("m/z array"), spectrum.get("intensity array")):
-                key = round(float(mz))
-                value = int(intensity)
-                if key in ion_intens_dic:
-                    ion_intens_dic[key] = max(ion_intens_dic[key], value)
-                else:
-                    ion_intens_dic[key] = value
-            meta[name] = ion_intens_dic
-        return meta
-
-
-def dot_product_distance(p:np.ndarray, q:np.ndarray) -> float:
-        """
-        Calculate the dot product distance between two vectors p and q.
-
-        Args:
-            p (numpy.ndarray): First vector.
-            q (numpy.ndarray): Second vector.
-
-        Returns:
-            float: Dot product distance between the two vectors.
-        """
-        if np.sum(p) == 0 or np.sum(q) == 0:
-            return 0
-        return np.power(np.sum(q * p), 2) / (np.sum(np.power(q, 2)) * np.sum(np.power(p, 2)))
+    Returns:
+        dict: A dictionary where keys are compound names and values are dictionaries of ion intensities.
+    """
+    spectra = parse_msp_file(msp_file)
+    meta = {}
+    for spectrum in spectra:
+        name = spectrum.get("params").get("name")
+        ion_intens_dic = {}
+        for mz, intensity in zip(
+            spectrum.get("m/z array"), spectrum.get("intensity array")
+        ):
+            key = round(float(mz))
+            value = int(intensity)
+            if key in ion_intens_dic:
+                ion_intens_dic[key] = max(ion_intens_dic[key], value)
+            else:
+                ion_intens_dic[key] = value
+        meta[name] = ion_intens_dic
+    return meta
 
 
-def weighted_dot_product_distance(compare_df, fr_factor):
-        """
-        Calculate the weighted dot product distance between two vectors in a DataFrame.
+def dot_product_distance(p: np.ndarray, q: np.ndarray) -> float:
+    """
+    Calculate the dot product distance between two vectors p and q.
 
-        Args:
-            compare_df (pd.DataFrame): DataFrame with two columns representing the vectors to compare.
-            fr_factor (float): Factor used in the calculation.
+    Args:
+        p (numpy.ndarray): First vector.
+        q (numpy.ndarray): Second vector.
 
-        Returns:
-            float: Composite score based on the weighted dot product distance.
-        """
-        m_q = pd.Series(compare_df.index)
-        m_q = m_q.astype(float)
-        i_q = np.array(compare_df.iloc[:, 0])
-        i_r = np.array(compare_df.iloc[:, 1])
-        k = 0.5
-        l = 2
-        w_q = np.power(i_q, k) * np.power(m_q, l)
-        w_r = np.power(i_r, k) * np.power(m_q, l)
-        ss = dot_product_distance(w_q, w_r)
-        shared_spec = np.vstack((i_q, i_r))
-        shared_spec = pd.DataFrame(shared_spec)
-        shared_spec = shared_spec.loc[:, (shared_spec != 0).all(axis=0)]
-        m = int(shared_spec.shape[1])
-        if m >= fr_factor:
-            FR = 0
-            for i in range(1, m):
-                s = (shared_spec.iat[0, i] / shared_spec.iat[0, (i - 1)]) * (
-                    shared_spec.iat[1, (i - 1)] / shared_spec.iat[1, i]
-                )
-                if s > 1:
-                    s = 1 / s
-                FR = FR + s
-            ave_FR = FR / (m - 1)
-            NU = int(len(compare_df))
-            composite_score = ((NU * ss) + (m * ave_FR)) / (NU + m)
-        else:
-            composite_score = ss
-
-        return composite_score
+    Returns:
+        float: Dot product distance between the two vectors.
+    """
+    if np.sum(p) == 0 or np.sum(q) == 0:
+        return 0
+    return np.power(np.sum(q * p), 2) / (
+        np.sum(np.power(q, 2)) * np.sum(np.power(p, 2))
+    )
 
 
-class GetMethod:
+def weighted_dot_product_distance(compare_df:pd.DataFrame, fr_factor:float) -> float:
+    """
+    Calculate the weighted dot product distance between two vectors in a DataFrame.
 
-    def calculate_similarity(self, target_name, df, n, fr_factor):
-        """
-        Calculate the similarity scores between the target compound and all compounds in the DataFrame.
+    Args:
+        compare_df (pd.DataFrame): DataFrame with two columns representing the vectors to compare.
+        fr_factor (float): Factor used in the calculation.
 
-        Args:
-            target_name (str): The name of the target compound.
-            df (pd.DataFrame): The DataFrame containing compound data.
-            n (int): The number of top similar compounds to return.
-            fr_factor (float): The factor used in the weighted dot product distance calculation.
+    Returns:
+        float: Composite score based on the weighted dot product distance.
+    """
+    m_q = pd.Series(compare_df.index)
+    m_q = m_q.astype(float)
+    i_q = np.array(compare_df.iloc[:, 0])
+    i_r = np.array(compare_df.iloc[:, 1])
+    k = 0.5
+    l = 2
+    w_q = np.power(i_q, k) * np.power(m_q, l)
+    w_r = np.power(i_r, k) * np.power(m_q, l)
+    ss = dot_product_distance(w_q, w_r)
+    shared_spec = np.vstack((i_q, i_r))
+    shared_spec = pd.DataFrame(shared_spec)
+    shared_spec = shared_spec.loc[:, (shared_spec != 0).all(axis=0)]
+    m = int(shared_spec.shape[1])
+    if m >= fr_factor:
+        FR = 0
+        for i in range(1, m):
+            s = (shared_spec.iat[0, i] / shared_spec.iat[0, (i - 1)]) * (
+                shared_spec.iat[1, (i - 1)] / shared_spec.iat[1, i]
+            )
+            if s > 1:
+                s = 1 / s
+            FR = FR + s
+        ave_FR = FR / (m - 1)
+        NU = int(len(compare_df))
+        composite_score = ((NU * ss) + (m * ave_FR)) / (NU + m)
+    else:
+        composite_score = ss
 
-        Returns:
-            pd.DataFrame: A DataFrame containing similarity scores for each compound.
+    return composite_score
 
-        """
-        result_df = pd.DataFrame(columns=["Score"])
-        first_col = df.loc[target_name]
-        for compound in df.index.values:
-            if compound != target_name:
-                second_col = df.loc[compound]
-                compare_df = pd.concat([first_col, second_col], axis=1)
-                compare_df = compare_df.astype(float)
-                score = weighted_dot_product_distance(compare_df, fr_factor)
-                result_df.loc[compound, "Score"] = score
 
-        return result_df
+def calculate_similarity(target_name: str, df: pd.DataFrame, fr_factor: float) -> pd.DataFrame:
+    """
+    Calculate the similarity scores between the target compound and all compounds in the DataFrame.
 
-    def calculate_average_score_and_difference_count(
-        self, targeted_compound, ion_combination, df, similarity_threshold, fr_factor, n
-    ):
+    Args:
+        target_name (str): The name of the target compound.
+        df (pd.DataFrame): The DataFrame containing compound data.
+        fr_factor (float): The factor used in the weighted dot product distance calculation.
+
+    Returns:
+        pd.DataFrame: A DataFrame containing similarity scores for each compound.
+
+    """
+    result_df = pd.DataFrame(columns=["Score"])
+    first_col = df.loc[target_name]
+    for compound in df.index.values:
+        if compound != target_name:
+            second_col = df.loc[compound]
+            compare_df = pd.concat([first_col, second_col], axis=1)
+            compare_df = compare_df.astype(float)
+            score = weighted_dot_product_distance(compare_df, fr_factor)
+            result_df.loc[compound, "Score"] = score
+
+    return result_df
+
+
+def calculate_average_score_and_difference_count(
+        targeted_compound:str, 
+        ion_combination:list, 
+        df: pd.DataFrame, 
+        similarity_threshold: float, 
+        fr_factor: float,
+    )->pd.DataFrame:
         """
         Calculate the average similarity score and the difference count for a targeted compound using specified ion combinations.
 
@@ -130,7 +136,6 @@ class GetMethod:
             df (pd.DataFrame): The DataFrame containing compound data.
             similarity_threshold (float): The similarity threshold for considering compounds as similar.
             fr_factor (float): The factor used in the weighted dot product distance calculation.
-            n (int): The number of top similar compounds to consider.
 
         Returns:
             pd.DataFrame: A DataFrame containing difference counts and average similarity scores for each ion combination.
@@ -141,8 +146,8 @@ class GetMethod:
         )
         for ions in ion_combination:
             temp_df_1 = df[ions]
-            result_df_2 = self.calculate_similarity(
-                targeted_compound, temp_df_1, n, fr_factor
+            result_df_2 = calculate_similarity(
+                targeted_compound, temp_df_1, fr_factor
             )
             result_df_3 = result_df_2[(result_df_2["Score"] < similarity_threshold)]
             count = len(result_df_3)
@@ -159,6 +164,11 @@ class GetMethod:
 
         difference_count_df.sort_values(by="Diff_Count", inplace=True, ascending=False)
         return difference_count_df
+
+
+class GetMethod:
+
+ 
 
     def calculate_combination_score(
         self, combination_df, targeted_compound, temp_df, prefer_mz_threshold
@@ -220,7 +230,7 @@ class GetMethod:
 
     def group_rows(self, row):
         return "_".join(row.astype(str))
-    
+
     def replace_1(self, x):
         if 1 in x.values:
             x[:] = 1
@@ -423,8 +433,8 @@ class GetMethod:
                         )
                     else:
                         similar_compound_list = []
-                        result_df_1 = self.calculate_similarity(
-                            targeted_compound, temp_df, -1, fr_factor
+                        result_df_1 = calculate_similarity(
+                            targeted_compound, temp_df, fr_factor
                         )
                         for index, row in result_df_1.iterrows():
                             if float(row) >= similarity_threshold:
@@ -488,13 +498,12 @@ class GetMethod:
                             new_com = [[x] for x in col_name]
 
                             difference_count_df_1 = (
-                                self.calculate_average_score_and_difference_count(
+                                calculate_average_score_and_difference_count(
                                     targeted_compound,
                                     new_com,
                                     temp_df,
                                     similarity_threshold,
                                     fr_factor,
-                                    0,
                                 )
                             )
 
@@ -644,13 +653,12 @@ class GetMethod:
                                                     new_total.append(i)
                                     if flag == True:
 
-                                        difference_count_df_2 = self.calculate_average_score_and_difference_count(
+                                        difference_count_df_2 = calculate_average_score_and_difference_count(
                                             targeted_compound,
                                             new_total,
                                             temp_df,
                                             similarity_threshold,
                                             fr_factor,
-                                            n,
                                         )
 
                                         if len(difference_count_df_2) > 0:
@@ -718,7 +726,9 @@ class GetMethod:
                                     str(targeted_compound), "Ion_Combination"
                                 ] = combination_array[0]
             combination_result_df.to_csv(
-                Path(outpath) / "combination_results.csv", index=True, index_label="Name"
+                Path(outpath) / "combination_results.csv",
+                index=True,
+                index_label="Name",
             )
 
         error_df = pd.DataFrame(columns=["Name", "Error"])
@@ -1104,9 +1114,7 @@ class GetMethod:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Generate methods for compound analysis."
-    )
+    parser = CustomArgumentParser(description="Generate methods for compound analysis.")
     parser.add_argument("--msp_path", required=True, help="Path to the MSP file.")
     parser.add_argument(
         "--rt_data_path", required=True, help="Path to the RT data file."
@@ -1133,41 +1141,63 @@ if __name__ == "__main__":
         default=7,
     )
     parser.add_argument(
-        "--min_ion_num", type=int, required=True, help="Minimum number of ions.", default=2
+        "--min_ion_num",
+        type=int,
+        required=True,
+        help="Minimum number of ions.",
+        default=2,
     )
     parser.add_argument(
         "--prefer_mz_threshold",
         type=int,
         required=True,
         help="Preferred m/z threshold.",
-        default=60
+        default=60,
     )
     parser.add_argument(
         "--similarity_threshold",
         type=float,
         required=True,
         help="Similarity threshold.",
-        default=0.85
+        default=0.85,
     )
-    parser.add_argument("--fr_factor", type=float, required=True, help="FR factor.", default=2.0)
+    parser.add_argument(
+        "--fr_factor", type=float, required=True, help="FR factor.", default=2.0
+    )
     parser.add_argument(
         "--retention_time_max",
         type=float,
         required=True,
         help="Maximum retention time.",
-        default=68.80
+        default=68.80,
     )
     parser.add_argument(
-        "--solvent_delay", type=float, required=True, help="Solvent delay time.", default=0.00
+        "--solvent_delay",
+        type=float,
+        required=True,
+        help="Solvent delay time.",
+        default=0.00,
     )
     parser.add_argument(
-        "--sim_sig_max", type=int, required=True, help="Maximum number of SIM signals.", default=99
+        "--sim_sig_max",
+        type=int,
+        required=True,
+        help="Maximum number of SIM signals.",
+        default=99,
     )
     parser.add_argument(
-        "--min_dwell_time", type=float, required=True, help="Minimum dwell time.", default=10
+        "--min_dwell_time",
+        type=float,
+        required=True,
+        help="Minimum dwell time.",
+        default=10,
     )
     parser.add_argument(
-        "--point_per_s", type=float, required=True, help="Points per second.", default=2.0
+        "--point_per_s",
+        type=float,
+        required=True,
+        help="Points per second.",
+        default=2.0,
     )
     parser.add_argument(
         "--convert_to_ag_method",
@@ -1199,4 +1229,3 @@ if __name__ == "__main__":
         point_per_s=args.point_per_s,
         convert_to_ag_method=args.convert_to_ag_method,
     )
-
