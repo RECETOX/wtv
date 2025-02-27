@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import re
 from pathlib import Path
-from matchms.importing.load_from_msp import parse_msp_file
+from matchms.importing import load_from_msp
 from .utils import CustomArgumentParser
 
 
@@ -16,13 +16,13 @@ def read_msp(msp_file: str) -> dict:
     Returns:
         dict: A dictionary where keys are compound names and values are dictionaries of ion intensities.
     """
-    spectra = parse_msp_file(msp_file)
+    spectra = load_from_msp(msp_file)
     meta = {}
     for spectrum in spectra:
-        name = spectrum.get("params").get("name")
+        name = spectrum.metadata.get("compound_name")
         ion_intens_dic = {}
         for mz, intensity in zip(
-            spectrum.get("m/z array"), spectrum.get("intensity array")
+            spectrum.mz, spectrum.intensities
         ):
             key = round(float(mz))
             value = int(intensity)
