@@ -1,7 +1,35 @@
 import argparse
 from typing import Tuple
-
+from matchms.importing import load_from_msp
 import pandas as pd
+
+
+def read_msp(msp_file: str) -> dict:
+    """
+    Read data from an MSP file and convert it into a dictionary format using matchms.
+
+    Args:
+        msp_file (str): The path to the MSP file.
+
+    Returns:
+        dict: A dictionary where keys are compound names and values are dictionaries of ion intensities.
+    """
+    spectra = load_from_msp(msp_file)
+    meta = {}
+    for spectrum in spectra:
+        name = spectrum.metadata.get("compound_name")
+        ion_intens_dic = {}
+        for mz, intensity in zip(
+            spectrum.mz, spectrum.intensities
+        ):
+            key = round(float(mz))
+            value = int(intensity)
+            if key in ion_intens_dic:
+                ion_intens_dic[key] = max(ion_intens_dic[key], value)
+            else:
+                ion_intens_dic[key] = value
+        meta[name] = ion_intens_dic
+    return meta
 
 
 class LoadDataAction(argparse.Action):
