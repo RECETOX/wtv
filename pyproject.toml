@@ -1,0 +1,29 @@
+[project]
+name = "wtv"
+version = "0.1.0"
+description = "Simple ion selection for mass spec data."
+authors = [
+     {name = "RECETOX"}
+]
+license = {text = "LICENSE"}
+readme = "README.md"
+requires-python = ">=3.9,<3.13"
+dependencies = [
+    "matchms (==0.27.0)",
+    "numpy (==1.26.4)",
+    "pandas (==2.2.3)"
+]
+
+[tool.poetry]
+package-mode = false
+
+[tool.poetry.group.dev.dependencies]
+black = "25.1.0"
+ipdb = "0.13.13"
+ipython = "8.18.1"
+marimo = "0.11.9"
+ruff = "0.9.7"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
