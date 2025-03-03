@@ -38,7 +38,6 @@ class TestSmoke(unittest.TestCase):
             sim_sig_max=99,
             min_dwell_time=10,
             point_per_s=2.0,
-            convert_to_ag_method=False,
         )
 
         # Compare output files with ground truth

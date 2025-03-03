@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import re
 from pathlib import Path
+from matchms.importing import load_from_msp
 from .utils import CustomArgumentParser, read_msp
 
 
@@ -215,7 +216,6 @@ def main(
     sim_sig_max,
     min_dwell_time,
     point_per_s,
-    convert_to_ag_method,
 ):
 
     msp = Path(msp_path)
@@ -993,5 +993,4 @@ if __name__ == "__main__":
         sim_sig_max=args.sim_sig_max,
         min_dwell_time=args.min_dwell_time,
         point_per_s=args.point_per_s,
-        convert_to_ag_method=args.convert_to_ag_method,
     )
