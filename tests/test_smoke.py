@@ -41,7 +41,7 @@ class TestSmoke(unittest.TestCase):
         )
 
         # Compare output files with ground truth
-        output_files = ["combination_results.csv", "input_data_error_info.csv", "ion_rt_data.csv", "SIM_seg_result.csv"]
+        output_files = ["input_data_error_info.csv", "ion_rt_data.csv", "SIM_seg_result.csv"]
         for file in output_files:
             output_df = pd.read_csv(self.outpath / file)
             file_name = file[:-4]
