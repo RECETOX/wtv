@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import re
 from pathlib import Path
-from matchms.importing import load_from_msp
+
 from .utils import CustomArgumentParser, read_msp
 
 
@@ -199,9 +199,6 @@ def replace_1(x):
 
 def main(
     msp_path,
-    rt_data_path,
-    set_name_list,
-    name_list_path,
     mz_min,
     mz_max,
     outpath,
@@ -220,16 +217,10 @@ def main(
 
     msp = Path(msp_path)
 
-    try:
-        RT_data = pd.read_csv(rt_data_path, index_col=0)
-    except UnicodeDecodeError:
-        try:
-            RT_data = pd.read_csv(rt_data_path, index_col=0, encoding="gbk")
-        except UnicodeDecodeError as e:
-            print("Error:", e)
+    meta_1, RT_data = read_msp(msp)
 
     error_df = pd.DataFrame(columns=["error"])
-    meta_1 = read_msp(msp)
+    
 
     matrix = pd.DataFrame()
     for name, dic in meta_1.items():
@@ -271,20 +262,11 @@ def main(
 
     RT_data = RT_data.sort_values(by="RT")
 
-    if set_name_list:
-        with open(name_list_path) as f1:
-            f2 = list(f1)
-        compound_list = [name.strip().strip('"') for name in f2]
-        compound_list = list(set(compound_list))
-        for i in compound_list:
-            if i not in RT_data.index.values:
-                error_df.loc[i, "error"] = (
-                    "This compound is in name list, but not in RT list"
-                )
-                compound_list.remove(i)
+    print(RT_data, "RT DATA")
 
-    else:
-        compound_list = RT_data.index.values.tolist()
+    compound_list = RT_data.index.values.tolist()
+
+    print(compound_list, "COMPOUND LIST")
     error_df.to_csv(
         Path(outpath) / "input_data_error_info.csv",
         index=True,
@@ -870,13 +852,6 @@ if __name__ == "__main__":
     parser = CustomArgumentParser(description="Generate methods for compound analysis.")
     parser.add_argument("--msp_path", required=True, help="Path to the MSP file.")
     parser.add_argument(
-        "--rt_data_path", required=True, help="Path to the RT data file."
-    )
-    parser.add_argument(
-        "--set_name_list", action="store_true", help="Flag to set name list."
-    )
-    parser.add_argument("--name_list_path", help="Path to the name list file.")
-    parser.add_argument(
         "--mz_min", type=int, required=True, help="Minimum m/z value.", default=35
     )
     parser.add_argument(
@@ -962,9 +937,6 @@ if __name__ == "__main__":
 
     main(
         msp_path=args.msp_path,
-        rt_data_path=args.rt_data_path,
-        set_name_list=args.set_name_list,
-        name_list_path=args.name_list_path,
         mz_min=args.mz_min,
         mz_max=args.mz_max,
         outpath=args.outpath,

@@ -1,23 +1,31 @@
 import argparse
-from typing import Tuple
+from typing import Tuple, Dict
 from matchms.importing import load_from_msp
 import pandas as pd
 
 
-def read_msp(msp_file: str) -> dict:
+def read_msp(msp_file: str) -> Tuple[Dict[str, Dict[int, int]], pd.DataFrame]:
     """
     Read data from an MSP file and convert it into a dictionary format using matchms.
+    Also, create a DataFrame with columns 'Name' and 'RT'.
 
     Args:
         msp_file (str): The path to the MSP file.
 
     Returns:
-        dict: A dictionary where keys are compound names and values are dictionaries of ion intensities.
+        Tuple[Dict[str, Dict[int, int]], pd.DataFrame]: A tuple containing:
+            - A dictionary where keys are compound names and values are dictionaries of ion intensities.
+            - A DataFrame with columns 'Name' and 'RT'.
     """
     spectra = load_from_msp(msp_file)
     meta = {}
+    rt_data = []
     for spectrum in spectra:
         name = spectrum.metadata.get("compound_name")
+        retention_time = spectrum.metadata.get("retention_time")
+        if retention_time is None:
+            raise ValueError("Retention time is missing in spectra metadata. Specifically compund with name: ", name)
+        rt_data.append({"Name": name, "RT": retention_time})
         ion_intens_dic = {}
         for mz, intensity in zip(
             spectrum.mz, spectrum.intensities
@@ -29,7 +37,8 @@ def read_msp(msp_file: str) -> dict:
             else:
                 ion_intens_dic[key] = value
         meta[name] = ion_intens_dic
-    return meta
+    df = pd.DataFrame(rt_data).set_index("Name")
+    return meta, df
 
 
 class LoadDataAction(argparse.Action):

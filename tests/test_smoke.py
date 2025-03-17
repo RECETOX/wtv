@@ -7,9 +7,7 @@ from test_data import get_test_file
 class TestSmoke(unittest.TestCase):
 
     def setUp(self):
-        self.msp_path = get_test_file('msp_file')
-        self.rt_data_path = get_test_file('rt_data')
-        self.name_list_path = get_test_file('name_list')
+        self.msp_path = get_test_file('esi_spectra')
         self.parent_dir = Path(__file__).resolve().parent.parent
         self.outpath = self.parent_dir / "output_data"
 
@@ -21,9 +19,6 @@ class TestSmoke(unittest.TestCase):
         # Run the Main method
         method_generator(
             msp_path=self.msp_path,
-            rt_data_path=self.rt_data_path,
-            set_name_list=False,
-            name_list_path=self.name_list_path,
             mz_min=35,
             mz_max=400,
             outpath=str(self.outpath),
