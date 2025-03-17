@@ -2,6 +2,7 @@ import argparse
 from typing import Tuple, Dict
 from matchms.importing import load_from_msp
 import pandas as pd
+from pathlib import Path
 
 
 def read_msp(msp_file: str) -> Tuple[Dict[str, Dict[int, int]], pd.DataFrame]:
@@ -41,7 +42,7 @@ def read_msp(msp_file: str) -> Tuple[Dict[str, Dict[int, int]], pd.DataFrame]:
     return meta, df
 
 
-class LoadDataAction(argparse.Action):
+class LoadMSPAction(argparse.Action):
     """
     Custom argparse action to load data from a file.
     Supported file formats: CSV, TSV, Tabular and Parquet.
@@ -59,17 +60,11 @@ class LoadDataAction(argparse.Action):
 
         file_path, file_extension = values
         file_extension = file_extension.lower()
-        if file_extension == "csv":
-            df = pd.read_csv(file_path, keep_default_na=False).replace("", None)
-        elif file_extension in ["tsv", "tabular"]:
-            df = pd.read_csv(file_path, sep="\t", keep_default_na=False).replace(
-                "", None
-            )
-        elif file_extension == "parquet":
-            df = pd.read_parquet(file_path).replace("", None)
+        if file_extension == "msp":
+            meta, df = read_msp(Path(file_path))
         else:
             raise ValueError(f"Unsupported file format: {file_extension}")
-        setattr(namespace, self.dest, df)
+        setattr(namespace, self.dest, (meta, df))
 
 
 def write_csv(df: pd.DataFrame, file_path: str) -> None:
@@ -138,5 +133,5 @@ class StoreOutputAction(argparse.Action):
 class CustomArgumentParser(argparse.ArgumentParser):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.register("action", "load_data", LoadDataAction)
+        self.register("action", "load_msp", LoadMSPAction)
         self.register("action", "store_output", StoreOutputAction)

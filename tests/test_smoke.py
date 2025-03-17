@@ -1,6 +1,7 @@
 import unittest
 import pandas as pd
 from pathlib import Path
+from src.utils import read_msp
 from src.ion_selection import main as method_generator
 from test_data import get_test_file
 
@@ -16,9 +17,12 @@ class TestSmoke(unittest.TestCase):
             self.outpath.mkdir(parents=True)
 
     def test_smoke(self):
+        processed_msp_data = read_msp(self.msp_path)
+        self.assertIsInstance(processed_msp_data, tuple)
+        
         # Run the Main method
         method_generator(
-            msp_path=self.msp_path,
+            processed_msp_data=processed_msp_data,
             mz_min=35,
             mz_max=400,
             outpath=str(self.outpath),

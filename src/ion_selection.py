@@ -2,8 +2,7 @@ import pandas as pd
 import numpy as np
 import re
 from pathlib import Path
-
-from .utils import CustomArgumentParser, read_msp
+from src.utils import CustomArgumentParser
 
 
 def dot_product_distance(p: np.ndarray, q: np.ndarray) -> float:
@@ -198,7 +197,7 @@ def replace_1(x):
     return x
 
 def main(
-    msp_path,
+    processed_msp_data,
     mz_min,
     mz_max,
     outpath,
@@ -214,10 +213,9 @@ def main(
     min_dwell_time,
     point_per_s,
 ):
+    meta_1, RT_data = processed_msp_data
 
-    msp = Path(msp_path)
 
-    meta_1, RT_data = read_msp(msp)
 
     error_df = pd.DataFrame(columns=["error"])
     
@@ -262,11 +260,8 @@ def main(
 
     RT_data = RT_data.sort_values(by="RT")
 
-    print(RT_data, "RT DATA")
-
     compound_list = RT_data.index.values.tolist()
 
-    print(compound_list, "COMPOUND LIST")
     error_df.to_csv(
         Path(outpath) / "input_data_error_info.csv",
         index=True,
@@ -850,7 +845,13 @@ def main(
 
 if __name__ == "__main__":
     parser = CustomArgumentParser(description="Generate methods for compound analysis.")
-    parser.add_argument("--msp_path", required=True, help="Path to the MSP file.")
+    parser.add_argument(
+        "--msp_path",
+        nargs=2,
+        action="load_msp",
+        required=True, 
+        help="Path to the MSP file."
+    )
     parser.add_argument(
         "--mz_min", type=int, required=True, help="Minimum m/z value.", default=35
     )
@@ -936,7 +937,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     main(
-        msp_path=args.msp_path,
+        processed_msp_data=args.msp_path,
         mz_min=args.mz_min,
         mz_max=args.mz_max,
         outpath=args.outpath,
