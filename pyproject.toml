@@ -7,9 +7,9 @@ authors = [
 ]
 license = {text = "LICENSE"}
 readme = "README.md"
-requires-python = ">=3.9,<3.13"
+requires-python = ">=3.10,<3.13"
 dependencies = [
-    "matchms (==0.27.0)",
+    "matchms (==0.28.2)",
     "numpy (==1.26.4)",
     "pandas (==2.2.3)"
 ]
@@ -21,7 +21,7 @@ package-mode = false
 black = "25.1.0"
 ipdb = "0.13.13"
 ipython = "8.18.1"
-marimo = "0.11.9"
+marimo = "0.11.21"
 ruff = "0.9.7"
 pre-commit = "4.1.0"
 

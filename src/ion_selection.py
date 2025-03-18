@@ -287,7 +287,7 @@ def main(
         ]
     )
 
-    min_ion_intensity = min_ion_intensity_percent * 10
+    min_ion_intensity = min_ion_intensity_percent
 
     for targeted_compound, nearby_compound_list in nearby_compound_dic.items():
         combination_result_df.loc[targeted_compound, "RT"] = RT_data.loc[

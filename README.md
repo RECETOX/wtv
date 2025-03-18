@@ -6,6 +6,8 @@ An implementation of ion selection based on WTV-2.0
 
 1: Clone the code from [wtv](https://github.com/RECETOX/wtv)
 
+2: Create an empty miniconda environment [miniconda](https://www.anaconda.com/docs/getting-started/miniconda/main)
+
 2: Manage dependencies with [poetry](https://python-poetry.org/)
 
 
