@@ -218,6 +218,10 @@ def main(
     fr_factor,
     retention_time_max,
 ):
+        # Convert paths to Path objects
+    msp_file_path = Path(msp_file_path)
+    output_directory = Path(output_directory)
+
     meta_1, RT_data = read_msp(msp_file_path)
 
     error_df = pd.DataFrame(columns=["error"])
@@ -263,7 +267,7 @@ def main(
 
     #TO DO - Delete this line and all that goes with it
     error_df.to_csv(
-        "input_data_error_info.csv",
+        output_directory/"input_data_error_info.csv",
         index=True,
         index_label="Name",
     )
@@ -678,14 +682,13 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate methods for compound analysis.")
     parser.add_argument(
         "--msp_path",
-        nargs=2,
-        action="load_msp",
+        type=str,
         required=True,
         help="Path to the MSP file.",
     )
     parser.add_argument(
-        "--out_path",
-        action="write_msp",
+        "--outpath",
+        type=str,
         required=True, 
         help="Output path for results."
     )

@@ -11,10 +11,17 @@ class TestCLI(unittest.TestCase):
         self.msp_path = get_test_file("esi_spectra")
         self.parent_dir = Path(__file__).resolve().parent.parent
         self.outpath = self.parent_dir / "output_data"
+        self.output_files = ["filtered_ions.msp"]
 
         # Create output directory if it doesn't exist
         if not self.outpath.exists():
             self.outpath.mkdir(parents=True)
+
+        # Remove output files if they exist
+        for file in self.output_files:
+            output_path = self.outpath / file
+            if output_path.exists():
+                output_path.unlink()  # Remove the file
 
     def test_cli_call(self):
         # Simulate CLI call
@@ -24,7 +31,6 @@ class TestCLI(unittest.TestCase):
             "src.ion_selection",
             "--msp_path",
             str(self.msp_path),
-            "msp",
             "--outpath",
             str(self.outpath),
             "--mz_min",
@@ -45,19 +51,18 @@ class TestCLI(unittest.TestCase):
             "2",
             "--retention_time_max",
             "68.80",
-            "--solvent_delay",
-            "0.00",
-            "--sim_sig_max",
-            "99",
-            "--min_dwell_time",
-            "10",
-            "--point_per_s",
-            "2.0",
         ]
         result = subprocess.run(command, capture_output=True, text=True)
         self.assertEqual(
             result.returncode, 0, msg=f"CLI call failed with error: {result.stderr}"
         )
+
+        # Compare output files with ground truth
+        for file in self.output_files:
+            output_path = self.outpath / file
+            ground_truth_path = get_test_file(file[:-4])
+            with open(output_path, "r") as output_file, open(ground_truth_path, "r") as ground_truth_file:
+                self.assertEqual(output_file.read(), ground_truth_file.read())
 
 
 if __name__ == "__main__":
