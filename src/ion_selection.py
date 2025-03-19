@@ -115,7 +115,9 @@ def calculate_average_score_and_difference_count(
         difference_count_df = pd.DataFrame(
             columns=["Diff_Count", "Similar_Compound_Ave_Score"]
         )
+        
         for ions in ion_combination:
+            
             temp_df_1 = df[ions]
             result_df_2 = calculate_similarity(
                 targeted_compound, temp_df_1, fr_factor
@@ -153,7 +155,7 @@ def calculate_combination_score(combination_df, targeted_compound, temp_df, pref
     """
     for index, row in combination_df.iterrows():
         ion_list = re.findall("\d+\.?\d*", index)
-        ion_list = list(map(int, ion_list))
+        ion_list = list(map(float, ion_list))
         new_temp_df = temp_df.loc[str(targeted_compound), ion_list].to_frame()
         new_temp_df["ion"] = new_temp_df.index.tolist()
         new_temp_df["ion"] = new_temp_df["ion"].astype("int")
@@ -417,7 +419,8 @@ def main(
                             solo_list.append(targeted_compound)
                 else:
                     col_name = list(temp_df.columns)
-                    col_name = list(map(int, col_name))
+                    
+                    col_name = list(map(float, col_name))
                     new_com = [[x] for x in col_name]
 
                     difference_count_df_1 = (
@@ -486,7 +489,7 @@ def main(
                                     "\d+\.?\d*", ion_combination
                                 )
                                 ion_combination_list = list(
-                                    map(int, ion_combination_list)
+                                    map(float, ion_combination_list)
                                 )
                                 candidate_list = [
                                     i
@@ -569,8 +572,9 @@ def main(
                                             temp_ion_combination_list
                                         )
                                         temp_ion_combination_list = []
+                                    
                                     for i in total_list:
-                                        i = list(map(int, i))
+                                        i = list(map(float, i))
                                         i.sort()
                                         if i not in new_total:
                                             new_total.append(i)
@@ -659,7 +663,8 @@ def main(
             if type(combination_result_df.loc[name, "Ion_Combination"]) == str:
                 ion_str = combination_result_df.loc[name, "Ion_Combination"]
                 ion_list = re.findall("\d+\.?\d*", ion_str)
-                ion_list = list(map(int, ion_list))
+                
+                ion_list = list(map(float, ion_list))
                 for x in range(0, len(ion_list)):
                     name_list_total.append(name)
                     RT_list_total.append(RT_data.loc[name, "RT"])

@@ -31,7 +31,7 @@ def read_msp(msp_file: str) -> Tuple[Dict[str, Dict[int, int]], pd.DataFrame]:
         for mz, intensity in zip(
             spectrum.mz, spectrum.intensities
         ):
-            key = round(float(mz))
+            key = float(mz)
             value = int(intensity)
             if key in ion_intens_dic:
                 ion_intens_dic[key] = max(ion_intens_dic[key], value)
