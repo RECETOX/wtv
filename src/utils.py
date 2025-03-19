@@ -1,11 +1,15 @@
 import argparse
-from typing import Tuple, Dict
-from matchms.importing import load_from_msp
-import pandas as pd
 from pathlib import Path
+from typing import Dict, Tuple
+
+import numpy as np
+import pandas as pd
+from matchms import Spectrum
+from matchms.exporting import save_as_msp
+from matchms.importing import load_from_msp
 
 
-def read_msp(msp_file: str) -> Tuple[Dict[str, Dict[int, int]], pd.DataFrame]:
+def read_msp(msp_file_path: str) -> Tuple[Dict[str, Dict[int, int]], pd.DataFrame]:
     """
     Read data from an MSP file and convert it into a dictionary format using matchms.
     Also, create a DataFrame with columns 'Name' and 'RT'.
@@ -18,19 +22,22 @@ def read_msp(msp_file: str) -> Tuple[Dict[str, Dict[int, int]], pd.DataFrame]:
             - A dictionary where keys are compound names and values are dictionaries of ion intensities.
             - A DataFrame with columns 'Name' and 'RT'.
     """
-    spectra = load_from_msp(msp_file)
+    spectra = load_from_msp(msp_file_path)
     meta = {}
     rt_data = []
     for spectrum in spectra:
+        if spectrum is None:
+            continue  # Skip empty spectra
         name = spectrum.metadata.get("compound_name")
         retention_time = spectrum.metadata.get("retention_time")
         if retention_time is None:
-            raise ValueError("Retention time is missing in spectra metadata. Specifically compund with name: ", name)
+            raise ValueError(
+                "Retention time is missing in spectra metadata. Specifically compund with name: ",
+                name,
+            )
         rt_data.append({"Name": name, "RT": retention_time})
         ion_intens_dic = {}
-        for mz, intensity in zip(
-            spectrum.mz, spectrum.intensities
-        ):
+        for mz, intensity in zip(spectrum.mz, spectrum.intensities):
             key = float(mz)
             value = int(intensity)
             if key in ion_intens_dic:
@@ -42,96 +49,31 @@ def read_msp(msp_file: str) -> Tuple[Dict[str, Dict[int, int]], pd.DataFrame]:
     return meta, df
 
 
-class LoadMSPAction(argparse.Action):
-    """
-    Custom argparse action to load data from a file.
-    Supported file formats: CSV, TSV, Tabular and Parquet.
-
-    """
-
-    def __call__(self, parser, namespace, values, option_string=None):
-        """
-        Load data from a file and store it in the namespace.
-        :param namespace: Namespace object
-        :param values: Tuple containing the file path and file extension
-        :param option_string: Option string
-        :return: None
-        """
-
-        file_path, file_extension = values
-        file_extension = file_extension.lower()
-        if file_extension == "msp":
-            meta, df = read_msp(Path(file_path))
-        else:
-            raise ValueError(f"Unsupported file format: {file_extension}")
-        setattr(namespace, self.dest, (meta, df))
+def write_msp(ion_df: pd.DataFrame, output_directory: Path, source_msp_file: Path) -> None:
+    spectra = load_from_msp(source_msp_file)
+    grouped_ions = ion_df.groupby("Name")
+    filtered_spectra = []  # List to store filtered spectra
+    for spectrum in spectra:
+        if spectrum is None:
+            continue  # Skip empty spectra
+        name = spectrum.metadata.get("compound_name")
+        ions = grouped_ions.get_group(name)
+        mzs_to_keep = ions["ion"].values
+        mask = np.isin(spectrum.peaks.mz, mzs_to_keep)
+        # Apply the filter
+        filtered_mz = spectrum.peaks.mz[mask]
+        filtered_intensities = spectrum.peaks.intensities[mask]
+        # Create a new filtered spectrum (or update the existing one)
+        filtered_spectrum = Spectrum(
+            mz=filtered_mz, intensities=filtered_intensities, metadata=spectrum.metadata
+        )
+        # Add the filtered spectrum to the list
+        filtered_spectra.append(filtered_spectrum)
+    save_as_msp(filtered_spectra, output_directory/"filtered_msp.msp")
 
 
-def write_csv(df: pd.DataFrame, file_path: str) -> None:
-    """
-    Write the dataframe to a CSV file.
-
-    Parameters:
-    df (pd.DataFrame): The dataframe to write.
-    file_path (str): The path to the output CSV file.
-    """
-    df.to_csv(file_path, index=False)
-
-
-def write_tsv(df: pd.DataFrame, file_path: str) -> None:
-    """
-    Write the dataframe to a TSV file.
-
-    Parameters:
-    df (pd.DataFrame): The dataframe to write.
-    file_path (str): The path to the output TSV file.
-    """
-    df.to_csv(file_path, sep="\t", index=False)
-
-
-def write_parquet(df: pd.DataFrame, file_path: str) -> None:
-    """
-    Write the dataframe to a Parquet file.
-
-    Parameters:
-    df (pd.DataFrame): The dataframe to write.
-    file_path (str): The path to the output Parquet file.
-    """
-    df.to_parquet(file_path, index=False)
-
-
-class StoreOutputAction(argparse.Action):
-    def __call__(
-        self,
-        parser: argparse.ArgumentParser,
-        namespace: argparse.Namespace,
-        values: Tuple[str, str],
-        option_string: str = None,
-    ) -> None:
-        """
-        Custom argparse action to store the output function and file path based on file extension.
-
-        Parameters:
-        parser (argparse.ArgumentParser): The argument parser instance.
-        namespace (argparse.Namespace): The namespace to hold the parsed values.
-        values (Tuple[str, str]): The file path and file extension.
-        option_string (str): The option string.
-        """
-        file_path, file_extension = values
-        file_extension = file_extension.lower()
-        if file_extension == "csv":
-            write_func = write_csv
-        elif file_extension in ["tsv", "tabular"]:
-            write_func = write_tsv
-        elif file_extension == "parquet":
-            write_func = write_parquet
-        else:
-            raise ValueError(f"Unsupported file format: {file_extension}")
-        setattr(namespace, self.dest, (write_func, file_path))
 
 
 class CustomArgumentParser(argparse.ArgumentParser):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.register("action", "load_msp", LoadMSPAction)
-        self.register("action", "store_output", StoreOutputAction)
