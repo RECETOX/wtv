@@ -257,7 +257,7 @@ def main(
             )
             RT_data.drop(index=index_1, inplace=True)
 
-        elif type(row[0]) not in [float, int, np.float64, np.int64] or row[0] == np.nan:
+        elif type(row.iloc[0]) not in [float, int, np.float64, np.int64] or row.iloc[0] == np.nan:
             error_df.loc[index_1, "error"] = "RT format error"
             RT_data.drop(index=index_1, inplace=True)
 
