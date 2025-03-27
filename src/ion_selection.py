@@ -156,8 +156,8 @@ def calculate_combination_score(
         pd.DataFrame: DataFrame with combination scores added.
 
     """
-    for index, row in combination_df.iterrows():
-        ion_list = re.findall("\d+\.?\d*", index)
+    for index, _ in combination_df.iterrows():
+        ion_list = re.findall(r"\d+\.?\d*", index)
         ion_list = list(map(float, ion_list))
         new_temp_df = temp_df.loc[str(targeted_compound), ion_list].to_frame()
         new_temp_df["ion"] = new_temp_df.index.tolist()
@@ -195,14 +195,57 @@ def calculate_solo_compound_combination_score(matrix_1, prefer_mz_threshold):
     return matrix_1
 
 
-def group_rows(row):
-    return "_".join(row.astype(str))
+def filter_matrix(matrix: pd.DataFrame, compound: str, min_ion_intensity: float) -> pd.DataFrame:
+    """
+    Filter the matrix for a specific compound based on minimum ion intensity.
+
+    Args:
+        matrix (pd.DataFrame): The DataFrame containing compound data.
+        compound (str): The name of the compound to filter.
+        min_ion_intensity (float): The minimum ion intensity threshold.
+
+    Returns:
+        pd.DataFrame: A filtered DataFrame containing ions with intensity above the threshold.
+    """
+    # Extract the compound data as a DataFrame
+    matrix_1 = matrix.loc[compound].to_frame()
+
+    # Add a column for ion values converted to integers
+    matrix_1["ion"] = matrix_1.index.astype(int)
+
+    # Apply the minimum ion intensity threshold
+    matrix_1[compound] = np.where(
+        matrix_1[compound].astype(float) < min_ion_intensity,
+        0,
+        matrix_1[compound].astype(float),
+    )
+
+    # Return the filtered DataFrame with ions above the threshold
+    return matrix_1.loc[matrix_1[compound] > 0, :]
 
 
-def replace_1(x):
-    if 1 in x.values:
-        x[:] = 1
-    return x
+def filter_and_sort_combinations(
+    combination_df: pd.DataFrame, score_column: str
+) -> pd.DataFrame:
+    """
+    Filter and sort combinations in a DataFrame based on a score column.
+
+    Args:
+        combination_df (pd.DataFrame): DataFrame containing combinations and their scores.
+        score_column (str): The name of the column containing scores to filter and sort by.
+
+    Returns:
+        pd.DataFrame: A filtered and sorted DataFrame based on the score column.
+    """
+    # Sort the DataFrame by the specified score column in ascending order
+    combination_df = combination_df.sort_values(
+        by=score_column, inplace=False, ascending=True
+    )
+    
+    # Filter the DataFrame to include only rows with scores greater than or equal to the minimum score
+    return combination_df[
+        combination_df[score_column] >= combination_df.iat[0, 1]
+    ]
 
 
 def main(
@@ -304,16 +347,7 @@ def main(
                 "No adjacent compounds."
             )
 
-            matrix_1 = matrix.loc[targeted_compound].to_frame()
-            matrix_1["ion"] = matrix_1.index.tolist()
-            matrix_1["ion"] = matrix_1["ion"].astype(int)
-            matrix_1[targeted_compound] = matrix_1[targeted_compound].astype(float)
-            matrix_1[targeted_compound] = np.where(
-                matrix_1[targeted_compound] < min_ion_intensity,
-                0,
-                matrix_1[targeted_compound],
-            )
-            matrix_1 = matrix_1.loc[matrix_1[targeted_compound] > 0, :]
+            matrix_1 = filter_matrix(matrix, targeted_compound, min_ion_intensity)
 
             if matrix_1.shape[0] < 2:
                 combination_result_df.loc[targeted_compound, "Ion_Combination"] = "NA"
@@ -359,7 +393,7 @@ def main(
                     targeted_compound, temp_df, fr_factor
                 )
                 for index, row in result_df_1.iterrows():
-                    if float(row) >= similarity_threshold:
+                    if float(row.iloc[0]) >= similarity_threshold:
                         similar_compound_list.append(index)
 
                 combination_result_df.loc[
@@ -370,18 +404,7 @@ def main(
                 if temp_df.shape[0] == 1:
                     temp_name = ((temp_df.index.values).tolist())[0]
                     if temp_name == targeted_compound:
-                        matrix_1 = matrix.loc[targeted_compound].to_frame()
-                        matrix_1["ion"] = matrix_1.index.tolist()
-                        matrix_1["ion"] = matrix_1["ion"].astype(int)
-                        matrix_1[targeted_compound] = matrix_1[
-                            targeted_compound
-                        ].astype(float)
-                        matrix_1[targeted_compound] = np.where(
-                            matrix_1[targeted_compound] < min_ion_intensity,
-                            0,
-                            matrix_1[targeted_compound],
-                        )
-                        matrix_1 = matrix_1.loc[matrix_1[targeted_compound] > 0, :]
+                        matrix_1 = filter_matrix(matrix, targeted_compound, min_ion_intensity)
 
                         if matrix_1.shape[0] < 2:
                             combination_result_df.loc[
@@ -427,30 +450,19 @@ def main(
                         >= difference_count_df_1.iat[0, 0]
                     ]
                     if combination_df.shape[0] > 5:
-                        combination_df = combination_df.sort_values(
-                            by="Similar_Compound_Ave_Score",
-                            inplace=False,
-                            ascending=True,
+                        combination_df = filter_and_sort_combinations(
+                            combination_df, "Similar_Compound_Ave_Score"
                         )
-                        combination_df = combination_df[
-                            combination_df["Similar_Compound_Ave_Score"]
-                            >= combination_df.iat[0, 1]
-                        ]
                         if combination_df.shape[0] > 5:
                             combination_df = calculate_combination_score(
                                 combination_df,
                                 targeted_compound,
                                 temp_df,
                                 prefer_mz_threshold,
-                            )
-                            combination_df = combination_df.sort_values(
+                            ).sort_values(
                                 by="com_score", inplace=False, ascending=False
-                            )
-                            combination_df = combination_df[:5]
-                        else:
-                            combination_df = combination_df
-                    else:
-                        combination_df = combination_df
+                            )[:5]
+                        
                     ion_list = list(temp_df)
                     combination_array = combination_df.index.values
                     n = 0
@@ -460,7 +472,7 @@ def main(
 
                     while True:
                         if (
-                            int((combination_df.max())[0]) >= int(temp_df.shape[0] - 1)
+                            int((combination_df.max()).iloc[0]) >= int(temp_df.shape[0] - 1)
                             and ion_num >= min_ion_num
                         ):
                             break
@@ -474,7 +486,7 @@ def main(
                             for ion_combination in combination_array:
 
                                 ion_combination_list = re.findall(
-                                    "\d+\.?\d*", ion_combination
+                                    r"\d+\.?\d*", ion_combination
                                 )
                                 ion_combination_list = list(
                                     map(float, ion_combination_list)
@@ -488,17 +500,9 @@ def main(
                                         temp_df.shape[0] - 1
                                     ):
                                         if combination_df.shape[0] > 1:
-                                            combination_df = combination_df.sort_values(
-                                                by="Similar_Compound_Ave_Score",
-                                                inplace=False,
-                                                ascending=True,
+                                            combination_df = filter_and_sort_combinations(
+                                                combination_df, "Similar_Compound_Ave_Score"
                                             )
-                                            combination_df = combination_df[
-                                                combination_df[
-                                                    "Similar_Compound_Ave_Score"
-                                                ]
-                                                >= combination_df.iat[0, 1]
-                                            ]
                                             if combination_df.shape[0] > 1:
                                                 combination_df = (
                                                     calculate_combination_score(
@@ -592,15 +596,9 @@ def main(
                                         break
 
                                     if combination_df.shape[0] > 1:
-                                        combination_df = combination_df.sort_values(
-                                            by="Similar_Compound_Ave_Score",
-                                            inplace=False,
-                                            ascending=True,
+                                        combination_df = filter_and_sort_combinations(
+                                            combination_df, "Similar_Compound_Ave_Score"
                                         )
-                                        combination_df = combination_df[
-                                            combination_df["Similar_Compound_Ave_Score"]
-                                            >= combination_df.iat[0, 1]
-                                        ]
                                         if combination_df.shape[0] > 1:
                                             combination_df = (
                                                 calculate_combination_score(
@@ -640,7 +638,7 @@ def main(
         if name in RT_data.index.values.tolist():
             if type(combination_result_df.loc[name, "Ion_Combination"]) == str:
                 ion_str = combination_result_df.loc[name, "Ion_Combination"]
-                ion_list = re.findall("\d+\.?\d*", ion_str)
+                ion_list = re.findall(r"\d+\.?\d*", ion_str)
 
                 ion_list = list(map(float, ion_list))
                 for x in range(0, len(ion_list)):
