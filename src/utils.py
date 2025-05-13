@@ -1,4 +1,3 @@
-import argparse
 from pathlib import Path
 from typing import Dict, Tuple
 
@@ -49,7 +48,9 @@ def read_msp(msp_file_path: str) -> Tuple[Dict[str, Dict[int, int]], pd.DataFram
     return meta, df
 
 
-def write_msp(ion_df: pd.DataFrame, output_directory: Path, source_msp_file: Path) -> None:
+def write_msp(
+    ion_df: pd.DataFrame, output_directory: Path, source_msp_file: Path
+) -> None:
     spectra = load_from_msp(source_msp_file)
     grouped_ions = ion_df.groupby(ion_df.index)
     filtered_spectra = []  # List to store filtered spectra

@@ -1,4 +1,3 @@
-import argparse
 import re
 from pathlib import Path
 
@@ -42,9 +41,9 @@ def weighted_dot_product_distance(compare_df: pd.DataFrame, fr_factor: float) ->
     i_q = np.array(compare_df.iloc[:, 0])
     i_r = np.array(compare_df.iloc[:, 1])
     k = 0.5
-    l = 2
-    w_q = np.power(i_q, k) * np.power(m_q, l)
-    w_r = np.power(i_r, k) * np.power(m_q, l)
+    exponent = 2  # Renamed from `l` to `exponent`
+    w_q = np.power(i_q, k) * np.power(m_q, exponent)
+    w_r = np.power(i_r, k) * np.power(m_q, exponent)
     ss = dot_product_distance(w_q, w_r)
     shared_spec = np.vstack((i_q, i_r))
     shared_spec = pd.DataFrame(shared_spec)
@@ -195,7 +194,9 @@ def calculate_solo_compound_combination_score(matrix_1, prefer_mz_threshold):
     return matrix_1
 
 
-def filter_matrix(matrix: pd.DataFrame, compound: str, min_ion_intensity: float) -> pd.DataFrame:
+def filter_matrix(
+    matrix: pd.DataFrame, compound: str, min_ion_intensity: float
+) -> pd.DataFrame:
     """
     Filter the matrix for a specific compound based on minimum ion intensity.
 
@@ -241,11 +242,9 @@ def filter_and_sort_combinations(
     combination_df = combination_df.sort_values(
         by=score_column, inplace=False, ascending=True
     )
-    
+
     # Filter the DataFrame to include only rows with scores greater than or equal to the minimum score
-    return combination_df[
-        combination_df[score_column] >= combination_df.iat[0, 1]
-    ]
+    return combination_df[combination_df[score_column] >= combination_df.iat[0, 1]]
 
 
 def main(
@@ -261,7 +260,7 @@ def main(
     fr_factor,
     retention_time_max,
 ):
-        # Convert paths to Path objects
+    # Convert paths to Path objects
     msp_file_path = Path(msp_file_path)
     output_directory = Path(output_directory)
 
@@ -278,7 +277,7 @@ def main(
     for col_name in list(matrix):
         if (
             type(col_name) not in [float, int, np.float64, np.int64]
-            and col_name.isdigit() == False
+            and not col_name.isdigit()  # Fixed equality comparison
         ):
             matrix.drop(columns=col_name, inplace=True)
 
@@ -300,7 +299,10 @@ def main(
             )
             RT_data.drop(index=index_1, inplace=True)
 
-        elif type(row.iloc[0]) not in [float, int, np.float64, np.int64] or row.iloc[0] == np.nan:
+        elif (
+            type(row.iloc[0]) not in [float, int, np.float64, np.int64]
+            or row.iloc[0] == np.nan
+        ):
             error_df.loc[index_1, "error"] = "RT format error"
             RT_data.drop(index=index_1, inplace=True)
 
@@ -308,9 +310,9 @@ def main(
 
     compound_list = RT_data.index.values.tolist()
 
-    #TO DO - Delete this line and all that goes with it
+    # TO DO - Delete this line and all that goes with it
     error_df.to_csv(
-        output_directory/"input_data_error_info.csv",
+        output_directory / "input_data_error_info.csv",
         index=True,
         index_label="Name",
     )
@@ -404,7 +406,9 @@ def main(
                 if temp_df.shape[0] == 1:
                     temp_name = ((temp_df.index.values).tolist())[0]
                     if temp_name == targeted_compound:
-                        matrix_1 = filter_matrix(matrix, targeted_compound, min_ion_intensity)
+                        matrix_1 = filter_matrix(
+                            matrix, targeted_compound, min_ion_intensity
+                        )
 
                         if matrix_1.shape[0] < 2:
                             combination_result_df.loc[
@@ -461,8 +465,10 @@ def main(
                                 prefer_mz_threshold,
                             ).sort_values(
                                 by="com_score", inplace=False, ascending=False
-                            )[:5]
-                        
+                            )[
+                                :5
+                            ]
+
                     ion_list = list(temp_df)
                     combination_array = combination_df.index.values
                     n = 0
@@ -472,11 +478,12 @@ def main(
 
                     while True:
                         if (
-                            int((combination_df.max()).iloc[0]) >= int(temp_df.shape[0] - 1)
+                            int((combination_df.max()).iloc[0])
+                            >= int(temp_df.shape[0] - 1)
                             and ion_num >= min_ion_num
                         ):
                             break
-                        elif flag == False:
+                        elif not flag:  # Fixed equality comparison
                             break
                         else:
                             n = n + 1
@@ -500,8 +507,11 @@ def main(
                                         temp_df.shape[0] - 1
                                     ):
                                         if combination_df.shape[0] > 1:
-                                            combination_df = filter_and_sort_combinations(
-                                                combination_df, "Similar_Compound_Ave_Score"
+                                            combination_df = (
+                                                filter_and_sort_combinations(
+                                                    combination_df,
+                                                    "Similar_Compound_Ave_Score",
+                                                )
                                             )
                                             if combination_df.shape[0] > 1:
                                                 combination_df = (
@@ -547,7 +557,7 @@ def main(
                                         flag = False
                                         break
 
-                                elif flag == True:
+                                elif flag:  # Fixed equality comparison
 
                                     for candidate in candidate_list:
                                         temp_ion_combination_list = (
@@ -562,7 +572,7 @@ def main(
                                         i.sort()
                                         if i not in new_total:
                                             new_total.append(i)
-                                if flag == True:
+                                if flag:  # Fixed equality comparison
 
                                     difference_count_df_2 = (
                                         calculate_average_score_and_difference_count(
@@ -624,7 +634,7 @@ def main(
                                 else:
 
                                     break
-                        if flag == True:
+                        if flag:  # Fixed equality comparison
                             combination_result_df.loc[
                                 str(targeted_compound), "Ion_Combination"
                             ] = combination_array[0]
@@ -636,7 +646,7 @@ def main(
     RT_list_total = []
     for name in name_list:
         if name in RT_data.index.values.tolist():
-            if type(combination_result_df.loc[name, "Ion_Combination"]) == str:
+            if isinstance(combination_result_df.loc[name, "Ion_Combination"], str):  # Fixed type check
                 ion_str = combination_result_df.loc[name, "Ion_Combination"]
                 ion_list = re.findall(r"\d+\.?\d*", ion_str)
 
@@ -645,7 +655,7 @@ def main(
                     name_list_total.append(name)
                     RT_list_total.append(RT_data.loc[name, "RT"])
                     num.append(ion_list[x])
-            elif type(combination_result_df.loc[name, "Ion_Combination"]) == list:
+            elif isinstance(combination_result_df.loc[name, "Ion_Combination"], list):  # Fixed type check
                 ion_list = [
                     int(x) for x in combination_result_df.loc[name, "Ion_Combination"]
                 ]
@@ -674,81 +684,3 @@ def main(
             ion_rt.loc[idx, "RT"] = retention_time_max
 
     write_msp(ion_rt, output_directory, msp_file_path)
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Generate methods for compound analysis.")
-    parser.add_argument(
-        "--msp_path",
-        type=str,
-        required=True,
-        help="Path to the MSP file.",
-    )
-    parser.add_argument(
-        "--outpath",
-        type=str,
-        required=True, 
-        help="Output path for results."
-    )
-    parser.add_argument(
-        "--mz_min", type=int, required=True, help="Minimum m/z value.", default=35
-    )
-    parser.add_argument(
-        "--mz_max", type=int, required=True, help="Maximum m/z value.", default=400
-    )
-    
-    parser.add_argument(
-        "--rt_window", type=float, required=True, help="RT window value.", default=2.00
-    )
-    parser.add_argument(
-        "--min_ion_intensity_percent",
-        type=float,
-        required=True,
-        help="Minimum ion intensity percent.",
-        default=7,
-    )
-    parser.add_argument(
-        "--min_ion_num",
-        type=int,
-        required=True,
-        help="Minimum number of ions.",
-        default=2,
-    )
-    parser.add_argument(
-        "--prefer_mz_threshold",
-        type=int,
-        required=True,
-        help="Preferred m/z threshold.",
-        default=60,
-    )
-    parser.add_argument(
-        "--similarity_threshold",
-        type=float,
-        required=True,
-        help="Similarity threshold.",
-        default=0.85,
-    )
-    parser.add_argument(
-        "--fr_factor", type=float, required=True, help="FR factor.", default=2.0
-    )
-    parser.add_argument(
-        "--retention_time_max",
-        type=float,
-        required=True,
-        help="Maximum retention time.",
-        default=68.80,
-    )
-    args = parser.parse_args()
-    main(
-        msp_file_path=args.msp_path,
-        output_directory=args.outpath,
-        mz_min=args.mz_min,
-        mz_max=args.mz_max,
-        rt_window=args.rt_window,
-        min_ion_intensity_percent=args.min_ion_intensity_percent,
-        min_ion_num=args.min_ion_num,
-        prefer_mz_threshold=args.prefer_mz_threshold,
-        similarity_threshold=args.similarity_threshold,
-        fr_factor=args.fr_factor,
-        retention_time_max=args.retention_time_max,
-    )

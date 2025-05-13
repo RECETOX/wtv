@@ -1,0 +1,11 @@
+site_name: WTV Documentation
+nav:
+  - Home: index.md
+  - Installation: installation.md
+  - CLI Usage: cli_usage.md
+  - Library Usage: library_usage.md
+  - API Reference:
+      - Utils: api_utils.md
+      - Ion Selection: api_ion_selection.md
+theme:
+  name: material

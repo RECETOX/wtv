@@ -28,7 +28,7 @@ class TestCLI(unittest.TestCase):
         command = [
             "python",
             "-m",
-            "src.ion_selection",
+            "src.cli",
             "--msp_path",
             str(self.msp_path),
             "--outpath",
@@ -61,7 +61,10 @@ class TestCLI(unittest.TestCase):
         for file in self.output_files:
             output_path = self.outpath / file
             ground_truth_path = get_test_file(file[:-4])
-            with open(output_path, "r") as output_file, open(ground_truth_path, "r") as ground_truth_file:
+            with (
+                open(output_path, "r") as output_file,
+                open(ground_truth_path, "r") as ground_truth_file,
+            ):
                 self.assertEqual(output_file.read(), ground_truth_file.read())
 
 
