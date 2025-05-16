@@ -1,3 +1,7 @@
+# This file is a derivative work based on code by Honglun Yuan et al.
+# Original repository: https://github.com/yuanhonglun/WTV_2.0
+# Original publication: https://doi.org/10.1016/j.molp.2024.04.012
+
 import re
 from pathlib import Path
 

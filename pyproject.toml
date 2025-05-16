@@ -1,10 +1,14 @@
+# The following project is based on the original work by Honglun Yuan et al.
+# Original repository: https://github.com/yuanhonglun/WTV_2.0
+# Original publication: https://doi.org/10.1016/j.molp.2024.04.012
+# This project is licensed under the GPL-3.0 License.
 [tool.poetry]
 name = "wtv"
 version = "0.0.1"
 description = "A library and CLI for ion selection in mass spectrometry data."
 authors = ["RECETOX"]
 readme = "README.md"
-license = "MIT"
+license = "GPL-3.0"
 packages = [{include = "src"}]
 
 [tool.poetry.dependencies]
@@ -24,6 +28,7 @@ black = "^25.1.0"
 mkdocs = "^1.6.1"
 mkdocs-material = "^9.6.13"
 ruff = "^0.9.7"
+pre-commit = "^4.2.0"
 
 [tool.poetry.scripts]
 wtv-cli = "src.cli:main"

@@ -130,10 +130,11 @@ This project uses GitHub Actions to auto-generate and deploy documentation to Gi
 
 - **`GITHUB_TOKEN`**: This is automatically provided by GitHub for workflows. No additional setup is required unless you are using a custom token.
 
-### Publication and Original Repository
 
-This project is a slightly modified version of the original code published at [WTV_2.0](https://github.com/yuanhonglun/WTV_2.0). For more details, refer to the original repository and the [associated publication](https://doi.org/10.1016/j.molp.2024.04.012).
-
-### Known Issues 
+### Known Issues
 
 * It seems to generate slightly different results based on the OS version and/or Python version.
+
+### Acknowledgements
+
+This project is based on the original work by Honglun Yuan, Yiding Jiangfang, Zhenhua Liu, Rong Rong Su, Qiao Li, Chuanying Fang, Sishu Huang, Xianqing Liu, Alisdair Robert Fernie, and Jie Luo, as published in [WTV_2.0](https://github.com/yuanhonglun/WTV_2.0) and [their associated publication](https://doi.org/10.1016/j.molp.2024.04.012).
