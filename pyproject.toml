@@ -1,30 +1,38 @@
-[project]
-name = "wtv"
-version = "0.1.0"
-description = "Simple ion selection for mass spec data."
-authors = [
-     {name = "RECETOX"}
-]
-license = {text = "LICENSE"}
-readme = "README.md"
-requires-python = ">=3.10,<3.13"
-dependencies = [
-    "matchms (==0.28.2)",
-    "numpy (==1.26.4)",
-    "pandas (==2.2.3)"
-]
-
+# The following project is based on the original work by Honglun Yuan et al.
+# Original repository: https://github.com/yuanhonglun/WTV_2.0
+# Original publication: https://doi.org/10.1016/j.molp.2024.04.012
+# This project is licensed under the GPL-3.0 License.
 [tool.poetry]
-package-mode = false
+name = "wtv"
+version = "0.0.1"
+description = "A library and CLI for ion selection in mass spectrometry data."
+authors = ["RECETOX"]
+readme = "README.md"
+license = "GPL-3.0"
+packages = [{include = "src"}]
+
+[tool.poetry.dependencies]
+python = ">=3.9,<3.13"
+numpy = "^1.26.4"
+pandas = "^2.2.3"
+matchms = "^0.27.0"
+
+[tool.poetry.group.docs.dependencies]
+mkdocs = "^1.6.1"
+mkdocs-material = "^9.6.13"
 
 [tool.poetry.group.dev.dependencies]
-black = "25.1.0"
-ipdb = "0.13.13"
-ipython = "8.18.1"
-marimo = "0.11.21"
-ruff = "0.9.7"
-pre-commit = "4.1.0"
+pytest = "^7.4.2"
+pytest-cov = "^4.1.0"
+black = "^25.1.0"
+mkdocs = "^1.6.1"
+mkdocs-material = "^9.6.13"
+ruff = "^0.9.7"
+pre-commit = "^4.2.0"
+
+[tool.poetry.scripts]
+wtv-cli = "src.cli:main"
 
 [build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
+requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"

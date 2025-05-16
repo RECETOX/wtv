@@ -24,11 +24,11 @@ class TestCLI(unittest.TestCase):
                 output_path.unlink()  # Remove the file
 
     def test_cli_call(self):
-        # Simulate CLI call
+        # Simulate CLI call using poetry to ensure correct environment
         command = [
-            "python",
+            "poetry", "run", "python",
             "-m",
-            "src.ion_selection",
+            "src.cli",
             "--msp_path",
             str(self.msp_path),
             "--outpath",

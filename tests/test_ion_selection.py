@@ -2,13 +2,14 @@ import unittest
 import numpy as np
 from src.ion_selection import dot_product_distance
 
+
 class TestDotProductDistance(unittest.TestCase):
     def test_valid_vectors(self):
         # Test with valid vectors
         p = np.array([1, 2, 3])
         q = np.array([4, 5, 6])
         result = dot_product_distance(p, q)
-        expected = (np.sum(p * q) ** 2) / (np.sum(p ** 2) * np.sum(q ** 2))
+        expected = (np.sum(p * q) ** 2) / (np.sum(p**2) * np.sum(q**2))
         self.assertAlmostEqual(result, expected, places=6)
 
     def test_zero_vector_p(self):
@@ -38,6 +39,7 @@ class TestDotProductDistance(unittest.TestCase):
         q = np.array([4, 5])
         with self.assertRaises(ValueError):
             dot_product_distance(p, q)
+
 
 if __name__ == "__main__":
     unittest.main()

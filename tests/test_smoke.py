@@ -1,9 +1,7 @@
 import unittest
 from pathlib import Path
 
-import pandas as pd
-
-from src.ion_selection import main as method_generator
+from src.ion_selection import main as run_ion_selection
 from test_data import get_test_file
 
 
@@ -27,7 +25,7 @@ class TestSmoke(unittest.TestCase):
 
     def test_smoke(self):
         # Run the Main method
-        method_generator(
+        run_ion_selection(
             msp_file_path=self.msp_path,
             output_directory=str(self.outpath),
             mz_min=35,
@@ -45,7 +43,10 @@ class TestSmoke(unittest.TestCase):
         for file in self.output_files:
             output_path = self.outpath / file
             ground_truth_path = get_test_file(file[:-4])
-            with open(output_path, "r") as output_file, open(ground_truth_path, "r") as ground_truth_file:
+            with (
+                open(output_path, "r") as output_file,
+                open(ground_truth_path, "r") as ground_truth_file,
+            ):
                 self.assertEqual(output_file.read(), ground_truth_file.read())
 
 
