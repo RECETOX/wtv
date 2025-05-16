@@ -30,6 +30,11 @@ jobs:
           python -m pip install --upgrade pip poetry
           poetry lock
           poetry install --with dev
+      # Add Poetry's virtualenv to PATH so poetry run and subprocess calls work
+      - name: Add Poetry virtualenv to PATH
+        shell: bash
+        run: |
+          echo "$(poetry env info --path)/Scripts" >> $GITHUB_PATH
       - name: Run unit tests
         run: poetry run pytest
       - name: Verify that we can build the package
