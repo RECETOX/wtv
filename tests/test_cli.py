@@ -24,9 +24,9 @@ class TestCLI(unittest.TestCase):
                 output_path.unlink()  # Remove the file
 
     def test_cli_call(self):
-        # Simulate CLI call
+        # Simulate CLI call using poetry to ensure correct environment
         command = [
-            "python",
+            "poetry", "run", "python",
             "-m",
             "src.cli",
             "--msp_path",
@@ -61,10 +61,7 @@ class TestCLI(unittest.TestCase):
         for file in self.output_files:
             output_path = self.outpath / file
             ground_truth_path = get_test_file(file[:-4])
-            with (
-                open(output_path, "r") as output_file,
-                open(ground_truth_path, "r") as ground_truth_file,
-            ):
+            with open(output_path, "r") as output_file, open(ground_truth_path, "r") as ground_truth_file:
                 self.assertEqual(output_file.read(), ground_truth_file.read())
 
 
