@@ -1,0 +1,44 @@
+name: Generate and Deploy Documentation
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-docs:
+    name: Build and Deploy Documentation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.11
+
+      - name: Upgrade pip and install Poetry
+        run: |
+          python -m pip install --upgrade pip poetry
+
+      - name: Regenerate lock file (if necessary)
+        run: |
+          poetry lock
+
+      - name: Install dependencies
+        run: |
+          poetry install --with docs
+
+      - name: Build documentation
+        run: |
+          poetry run mkdocs build
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: site
+          publish_branch: gh-pages
