@@ -1,9 +1,6 @@
 name: Publish to PyPI
 
 on:
-  push:  # Added for testing with act
-    branches:
-      - main
   release:
     types: [published]
   workflow_dispatch:
