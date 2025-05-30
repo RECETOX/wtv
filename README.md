@@ -1,4 +1,6 @@
 ![PyPI - Version](https://img.shields.io/pypi/v/wtv)
+![Conda Version](https://img.shields.io/conda/vn/bioconda/wtv?style=flat)
+
 
 # wtv
 
