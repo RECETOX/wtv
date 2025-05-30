@@ -1,4 +1,4 @@
-exclude: '.*\.csv$'
+exclude: '.*\.(csv|msp)$'
 default_stages: [pre-commit]
 
 default_language_version:

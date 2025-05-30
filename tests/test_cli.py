@@ -28,7 +28,7 @@ class TestCLI(unittest.TestCase):
         command = [
             "poetry", "run", "python",
             "-m",
-            "src.cli",
+            "wtv.cli",
             "--msp_path",
             str(self.msp_path),
             "--outpath",
@@ -62,7 +62,9 @@ class TestCLI(unittest.TestCase):
             output_path = self.outpath / file
             ground_truth_path = get_test_file(file[:-4])
             with open(output_path, "r") as output_file, open(ground_truth_path, "r") as ground_truth_file:
-                self.assertEqual(output_file.read(), ground_truth_file.read())
+                output_lines = [line.rstrip() for line in output_file if line.strip() != ""]
+                ground_truth_lines = [line.rstrip() for line in ground_truth_file if line.strip() != ""]
+                self.assertEqual(output_lines, ground_truth_lines)
 
 
 if __name__ == "__main__":

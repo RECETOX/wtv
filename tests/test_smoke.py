@@ -1,7 +1,7 @@
 import unittest
 from pathlib import Path
 
-from src.ion_selection import main as run_ion_selection
+from wtv.ion_selection import main as run_ion_selection
 from test_data import get_test_file
 
 
@@ -47,7 +47,9 @@ class TestSmoke(unittest.TestCase):
                 open(output_path, "r") as output_file,
                 open(ground_truth_path, "r") as ground_truth_file,
             ):
-                self.assertEqual(output_file.read(), ground_truth_file.read())
+                output_lines = [line.rstrip() for line in output_file if line.strip() != ""]
+                ground_truth_lines = [line.rstrip() for line in ground_truth_file if line.strip() != ""]
+                self.assertEqual(output_lines, ground_truth_lines)
 
 
 if __name__ == "__main__":

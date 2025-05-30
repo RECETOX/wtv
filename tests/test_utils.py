@@ -5,7 +5,7 @@ import numpy as np
 from matchms import Spectrum
 from matchms.importing import load_from_msp
 from matchms.exporting import save_as_msp
-from src.utils import read_msp, write_msp
+from wtv.utils import read_msp, write_msp
 
 
 class TestUtils(unittest.TestCase):

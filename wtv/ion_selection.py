@@ -8,7 +8,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from src.utils import read_msp, write_msp
+from wtv.utils import read_msp, write_msp
 
 
 def dot_product_distance(p: np.ndarray, q: np.ndarray) -> float:

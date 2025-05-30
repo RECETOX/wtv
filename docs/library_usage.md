@@ -3,8 +3,9 @@
 The WTV library provides programmatic access to its core functionality.
 
 ## Example Usage
+
 ```python
-from src.ion_selection import main
+from wtv.ion_selection import main
 
 main(
     msp_file_path="input.msp",
@@ -22,6 +23,7 @@ main(
 ```
 
 ## Functions
+
 - `main`: Core function for ion selection.
 - `read_msp`: Reads an MSP file and returns metadata and retention time data.
 - `write_msp`: Writes filtered ions to an MSP file.

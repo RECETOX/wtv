@@ -1,7 +1,7 @@
 ![PyPI - Version](https://img.shields.io/pypi/v/wtv)
 
-
 # wtv
+
 An implementation of ion selection based on WTV-2.0
 
 ### Project setup:
@@ -15,37 +15,45 @@ An implementation of ion selection based on WTV-2.0
 ### Running tests:
 
 #### Using `unittest`:
+
 To run all tests using `unittest`, use the following command:
+
 ```bash
 python -m unittest discover -s tests
 ```
 
 #### Using `pytest`:
+
 1. Ensure `pytest` is installed:
+
    ```bash
    poetry install --with dev
    ```
 
 2. Run tests with `pytest`:
+
    ```bash
    poetry run pytest
    ```
 
 3. Debug test failures:
    Run `pytest` with verbose output:
+
    ```bash
    poetry run pytest -v
    ```
 
 4. Generate a test coverage report:
    Install `pytest-cov`:
+
    ```bash
    poetry add pytest-cov --group dev
    ```
 
    Run tests with coverage:
+
    ```bash
-   poetry run pytest --cov=src
+   poetry run pytest --cov=wtv
    ```
 
 ### Testing Documentation Locally
@@ -53,13 +61,15 @@ python -m unittest discover -s tests
 To test the documentation locally, follow these steps:
 
 1. **Install MkDocs**:
-   Ensure MkDocs and its dependencies are installed.  run:
+   Ensure MkDocs and its dependencies are installed. run:
+
    ```bash
    poetry install --with docs
    ```
 
 2. **Serve the Documentation**:
    Use the following command to serve the documentation locally:
+
    ```bash
    poetry run mkdocs serve
    ```
@@ -76,18 +86,21 @@ To run all GitHub Actions workflows locally using `act`, follow these steps:
 
 2. **Set Up Secrets**:
    Create a `.secrets` file in the root of your repository and define the required secrets. For example:
+
    ```
    PYPI_API_TOKEN=your-real-or-mock-token-for-testing
    ```
 
 3. **Run All Workflows**:
    Use the following command to run all workflows:
+
    ```bash
    act
    ```
 
 4. **Run a Specific Workflow**:
    To run a specific workflow, use the `-W` flag followed by the path to the workflow file:
+
    ```bash
    act -W .github/workflows/package.yaml
    act -W .github/workflows/publish.yml
@@ -95,6 +108,7 @@ To run all GitHub Actions workflows locally using `act`, follow these steps:
 
 5. **Specify an Event**:
    If you want to simulate a specific event (e.g., `push`, `pull_request`, or `release`), use the `-e` flag:
+
    ```bash
    act -e push
    ```
@@ -108,16 +122,19 @@ To run all GitHub Actions workflows locally using `act`, follow these steps:
 #### Example `act` Commands
 
 - Run all workflows:
+
   ```bash
   act
   ```
 
 - Run the `package.yaml` workflow:
+
   ```bash
   act -W .github/workflows/package.yaml
   ```
 
 - Run the `publish.yml` workflow:
+
   ```bash
   act -W .github/workflows/publish.yml
   ```
@@ -133,10 +150,9 @@ This project uses GitHub Actions to auto-generate and deploy documentation to Gi
 
 - **`GITHUB_TOKEN`**: This is automatically provided by GitHub for workflows. No additional setup is required unless you are using a custom token.
 
-
 ### Known Issues
 
-* It seems to generate slightly different results based on the OS version and/or Python version.
+- It seems to generate slightly different results based on the OS version and/or Python version.
 
 ### Acknowledgements
 
