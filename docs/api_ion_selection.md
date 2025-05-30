@@ -1,9 +1,11 @@
 # API Reference: Ion Selection
 
 ## `main_logic`
+
 Core function for ion selection.
 
 ### Parameters
+
 - `msp_file_path` (str): Path to the input MSP file.
 - `output_directory` (str): Directory to save the output files.
 - `mz_min` (int): Minimum m/z value.
@@ -17,8 +19,9 @@ Core function for ion selection.
 - `retention_time_max` (float): Maximum retention time.
 
 ### Example
+
 ```python
-from src.ion_selection import main
+from wtv.ion_selection import main
 
 main(
     msp_file_path="input.msp",

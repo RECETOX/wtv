@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-from src.ion_selection import dot_product_distance
+from wtv.ion_selection import dot_product_distance
 
 
 class TestDotProductDistance(unittest.TestCase):
