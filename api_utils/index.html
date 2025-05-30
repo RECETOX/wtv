@@ -614,7 +614,7 @@
 <li><code>Tuple[Dict[str, Dict[int, int]], pd.DataFrame]</code>: Metadata and retention time data.</li>
 </ul>
 <h3 id="example">Example</h3>
-<pre><code class="language-python">from src.utils import read_msp
+<pre><code class="language-python">from wtv.utils import read_msp
 
 meta, rt_data = read_msp(&quot;input.msp&quot;)
 </code></pre>
@@ -627,7 +627,7 @@ meta, rt_data = read_msp(&quot;input.msp&quot;)
 <li><code>source_msp_file</code> (Path): Path to the source MSP file.</li>
 </ul>
 <h3 id="example_1">Example</h3>
-<pre><code class="language-python">from src.utils import write_msp
+<pre><code class="language-python">from wtv.utils import write_msp
 
 write_msp(ion_df, &quot;output&quot;, &quot;input.msp&quot;)
 </code></pre>
