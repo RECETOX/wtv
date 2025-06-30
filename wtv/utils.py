@@ -5,10 +5,12 @@ import numpy as np
 import pandas as pd
 from matchms import Spectrum
 from matchms.exporting import save_as_msp
+from matchms.exporting.metadata_export import get_metadata_as_array
 from matchms.importing import load_from_msp
 
 
-def read_msp(msp_file_path: str) -> Tuple[Dict[str, Dict[int, int]], pd.DataFrame]:
+
+def read_msp(msp_file_path: str, retention: str = 'retention_time') -> Tuple[Dict[str, Dict[float, int]], pd.DataFrame]:
     """
     Read data from an MSP file and convert it into a dictionary format using matchms.
     Also, create a DataFrame with columns 'Name' and 'RT'.
@@ -21,30 +23,23 @@ def read_msp(msp_file_path: str) -> Tuple[Dict[str, Dict[int, int]], pd.DataFram
             - A dictionary where keys are compound names and values are dictionaries of ion intensities.
             - A DataFrame with columns 'Name' and 'RT'.
     """
-    spectra = load_from_msp(msp_file_path)
+    spectra = list(load_from_msp(msp_file_path, metadata_harmonization=True))
     meta = {}
-    rt_data = []
+    # rt_data = []
     for spectrum in spectra:
         if spectrum is None:
             continue  # Skip empty spectra
         name = spectrum.metadata.get("compound_name")
-        retention_time = spectrum.metadata.get("retention_time")
-        if retention_time is None:
-            raise ValueError(
-                "Retention time is missing in spectra metadata. Specifically compund with name: ",
-                name,
-            )
-        rt_data.append({"Name": name, "RT": retention_time})
         ion_intens_dic = {}
         for mz, intensity in zip(spectrum.mz, spectrum.intensities):
             key = float(mz)
             value = int(intensity)
-            if key in ion_intens_dic:
-                ion_intens_dic[key] = max(ion_intens_dic[key], value)
-            else:
-                ion_intens_dic[key] = value
+            ion_intens_dic[key] = value
         meta[name] = ion_intens_dic
-    df = pd.DataFrame(rt_data).set_index("Name")
+
+    spectra_md, _ = get_metadata_as_array(spectra)
+    df = pd.DataFrame(spectra_md).rename(columns={'compound_name':'Name', retention: 'RT'}).get(["Name", "RT"])
+    df.set_index("Name", inplace=True)
     return meta, df
 
 

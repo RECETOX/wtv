@@ -12,10 +12,10 @@ license = "GPL-3.0"
 packages = [{include = "wtv"}]
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.13"
-numpy = "^1.26.4"
+python = ">=3.10,<3.13"
+numpy = "^2"
 pandas = "^2.2.3"
-matchms = "^0.27.0"
+matchms = "^0.30.2"
 
 [tool.poetry.group.docs.dependencies]
 mkdocs = "^1.6.1"
