@@ -10,10 +10,12 @@ on:
   workflow_dispatch:
 
 jobs:
-
   build:
-    name: Build for Windows with Python 3.12.9
-    runs-on: windows-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    name: Build for ${{ matrix.os }} with Python 3.12.9
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python 3.12.9
@@ -42,7 +44,7 @@ jobs:
 
   lint:
     name: Linting build
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
     steps:
