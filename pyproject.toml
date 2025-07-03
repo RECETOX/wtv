@@ -4,7 +4,7 @@
 # This project is licensed under the GPL-3.0 License.
 [tool.poetry]
 name = "wtv"
-version = "0.0.2"
+version = "0.1.0"
 description = "A library and CLI for ion selection in mass spectrometry data."
 authors = ["RECETOX"]
 readme = "README.md"
