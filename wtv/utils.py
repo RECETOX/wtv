@@ -11,8 +11,15 @@ from matchms.exporting.metadata_export import get_metadata_as_array
 from matchms.importing import load_from_msp
 
 
+def normalize_array(array, desired_max = 100):
+    actual_max = np.max(array)
+    zero_to_one_array = array / actual_max
+    normalized_array = zero_to_one_array * desired_max
+    return normalized_array
 
-def read_msp(msp_file_path: str, retention: str = 'retention_time') -> Tuple[Dict[str, Dict[float, int]], pd.DataFrame]:
+def read_msp(
+    msp_file_path: str, retention: str = "retention_time"
+) -> Tuple[Dict[str, Dict[float, int]], pd.DataFrame]:
     """
     Read data from an MSP file and convert it into a dictionary format using matchms.
     Also, create a DataFrame with columns 'Name' and 'RT'.
@@ -33,6 +40,7 @@ def read_msp(msp_file_path: str, retention: str = 'retention_time') -> Tuple[Dic
             continue  # Skip empty spectra
         name = spectrum.metadata.get("compound_name")
         ion_intens_dic = {}
+
         for mz, intensity in zip(spectrum.mz, spectrum.intensities):
             key = float(mz)
             value = int(intensity)
@@ -40,7 +48,11 @@ def read_msp(msp_file_path: str, retention: str = 'retention_time') -> Tuple[Dic
         meta[name] = ion_intens_dic
 
     spectra_md, _ = get_metadata_as_array(spectra)
-    df = pd.DataFrame(spectra_md).rename(columns={'compound_name':'Name', retention: 'RT'}).get(["Name", "RT"])
+    df = (
+        pd.DataFrame(spectra_md)
+        .rename(columns={"compound_name": "Name", retention: "RT"})
+        .get(["Name", "RT"])
+    )
     df.set_index("Name", inplace=True)
     return meta, df
 
@@ -69,6 +81,7 @@ def write_msp(
         filtered_spectra.append(filtered_spectrum)
     filtered_msp_path = str(output_directory / "filtered_ions.msp")
     save_as_msp(filtered_spectra, filtered_msp_path)
+
 
 def create_ion_matrix(mz_min, mz_max, meta_1):
     """Create a matrix of ions with compounds on the rows, mz values for ions on the columns, and ion intensities as values.
@@ -112,6 +125,7 @@ def filter_and_sort_combinations(
     # Filter the DataFrame to include only rows with scores greater than or equal to the minimum score
     return combination_df[combination_df[score_column] >= combination_df.iat[0, 1]]
 
+
 def check_rt_data(RT_data):
     duplicated_index = RT_data.index[RT_data.index.duplicated()]
     for index in duplicated_index:
@@ -120,12 +134,12 @@ def check_rt_data(RT_data):
     # RT_data.drop(duplicated_index, axis=0, inplace=True)
 
     for index_1, row in RT_data.iterrows():
-        if (
-            type(row.iloc[0]) not in [float, int, np.float64, np.int64]
-            or pd.isna(row.iloc[0])
+        if type(row.iloc[0]) not in [float, int, np.float64, np.int64] or pd.isna(
+            row.iloc[0]
         ):
             logger.error(f"RT format error for index: {index_1}")
             # RT_data.drop(index=index_1, inplace=True)
+
 
 def average_rts_for_duplicated_indices(RT_data):
     """

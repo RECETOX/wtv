@@ -1,4 +1,5 @@
 import argparse
+import logging
 from pathlib import Path
 from wtv.ion_selection import run_ion_selection
 
@@ -8,37 +9,19 @@ def parse_args():
         description="Generate methods for compound analysis."
     )
     parser.add_argument(
-        "--msp_path", 
-        type=str, 
-        required=True, 
-        help="Path to the MSP file."
+        "--msp_path", type=str, required=True, help="Path to the MSP file."
     )
     parser.add_argument(
-        "--outpath", 
-        type=str, 
-        required=True, 
-        help="Output path for results."
+        "--outpath", type=str, required=True, help="Output path for results."
     )
     parser.add_argument(
-        "--mz_min", 
-        type=int, 
-        required=True, 
-        help="Minimum m/z value.", 
-        default=35
+        "--mz_min", type=int, required=True, help="Minimum m/z value.", default=35
     )
     parser.add_argument(
-        "--mz_max", 
-        type=int, 
-        required=True, 
-        help="Maximum m/z value.", 
-        default=400
+        "--mz_max", type=int, required=True, help="Maximum m/z value.", default=400
     )
     parser.add_argument(
-        "--rt_window", 
-        type=float, 
-        required=True, 
-        help="RT window value.", 
-        default=2.00
+        "--rt_window", type=float, required=True, help="RT window value.", default=2.00
     )
     parser.add_argument(
         "--min_ion_intensity_percent",
@@ -83,6 +66,10 @@ def parse_args():
 
 def main():
     args = parse_args()
+    
+    logging.basicConfig(level=logging.INFO)
+    logging.info(f"Parsed arguments successfully ({args}).")
+    
     run_ion_selection(
         msp_file_path=Path(args.msp_path),
         output_directory=Path(args.outpath),

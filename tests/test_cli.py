@@ -26,7 +26,9 @@ class TestCLI(unittest.TestCase):
     def test_cli_call(self):
         # Simulate CLI call using poetry to ensure correct environment
         command = [
-            "poetry", "run", "python",
+            "poetry",
+            "run",
+            "python",
             "-m",
             "wtv.cli",
             "--msp_path",
@@ -61,9 +63,15 @@ class TestCLI(unittest.TestCase):
         for file in self.output_files:
             output_path = self.outpath / file
             ground_truth_path = get_test_file(file[:-4])
-            with open(output_path, "r") as output_file, open(ground_truth_path, "r") as ground_truth_file:
-                output_lines = [line.rstrip() for line in output_file if line.strip() != ""]
-                ground_truth_lines = [line.rstrip() for line in ground_truth_file if line.strip() != ""]
+            with open(output_path, "r") as output_file, open(
+                ground_truth_path, "r"
+            ) as ground_truth_file:
+                output_lines = [
+                    line.rstrip() for line in output_file if line.strip() != ""
+                ]
+                ground_truth_lines = [
+                    line.rstrip() for line in ground_truth_file if line.strip() != ""
+                ]
                 self.assertEqual(output_lines, ground_truth_lines)
 
 

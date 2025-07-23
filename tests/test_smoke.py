@@ -47,8 +47,12 @@ class TestSmoke(unittest.TestCase):
                 open(output_path, "r") as output_file,
                 open(ground_truth_path, "r") as ground_truth_file,
             ):
-                output_lines = [line.rstrip() for line in output_file if line.strip() != ""]
-                ground_truth_lines = [line.rstrip() for line in ground_truth_file if line.strip() != ""]
+                output_lines = [
+                    line.rstrip() for line in output_file if line.strip() != ""
+                ]
+                ground_truth_lines = [
+                    line.rstrip() for line in ground_truth_file if line.strip() != ""
+                ]
                 self.assertEqual(output_lines, ground_truth_lines)
 
 

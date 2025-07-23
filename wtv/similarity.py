@@ -135,7 +135,10 @@ def calculate_average_score_and_difference_count(
 
 
 def calculate_combination_score(
-    combination_df: pd.DataFrame, targeted_compound: str, temp_df: pd.DataFrame, prefer_mz_threshold: float
+    combination_df: pd.DataFrame,
+    targeted_compound: str,
+    temp_df: pd.DataFrame,
+    prefer_mz_threshold: float,
 ):
     """
     Calculate the combination score for ion combinations in a DataFrame.
@@ -165,12 +168,16 @@ def calculate_combination_score(
 
     return combination_df
 
+
 def get_ion_list(index):
     ion_list = re.findall(r"\d+\.?\d*", index)
     ion_list = list(map(float, ion_list))
     return ion_list
 
-def calculate_solo_compound_combination_score(matrix_1: pd.DataFrame, prefer_mz_threshold: float):
+
+def calculate_solo_compound_combination_score(
+    matrix_1: pd.DataFrame, prefer_mz_threshold: float
+):
     """
     Calculate the combination score for solo compounds in a DataFrame.
 
