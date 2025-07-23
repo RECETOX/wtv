@@ -1,8 +1,8 @@
 import unittest
 from pathlib import Path
 
-from wtv.ion_selection import run_ion_selection as run_ion_selection
 from test_data import get_test_file
+from wtv.ion_selection import run_ion_selection as run_ion_selection
 
 
 class TestSmoke(unittest.TestCase):

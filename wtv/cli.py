@@ -1,6 +1,7 @@
 import argparse
 import logging
 from pathlib import Path
+
 from wtv.ion_selection import run_ion_selection
 
 
@@ -66,10 +67,10 @@ def parse_args():
 
 def main():
     args = parse_args()
-    
+
     logging.basicConfig(level=logging.INFO)
     logging.info(f"Parsed arguments successfully ({args}).")
-    
+
     run_ion_selection(
         msp_file_path=Path(args.msp_path),
         output_directory=Path(args.outpath),

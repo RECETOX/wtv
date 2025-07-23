@@ -3,31 +3,24 @@
 # Original publication: https://doi.org/10.1016/j.molp.2024.04.012
 
 
+import concurrent
+import logging
 import re
 from pathlib import Path
 
-import logging
-
-# logger = logging.getLogger(__name__)
-
-import concurrent
 import numpy as np
 import pandas as pd
 
-from wtv.similarity import (
-    calculate_average_score_and_difference_count,
-    calculate_combination_score,
-    calculate_similarity,
-    calculate_solo_compound_combination_score,
-)
-from wtv.utils import (
-    average_rts_for_duplicated_indices,
-    check_rt_data,
-    create_ion_matrix,
-    filter_and_sort_combinations,
-    read_msp,
-    write_msp,
-)
+from wtv.similarity import (calculate_average_score_and_difference_count,
+                            calculate_combination_score, calculate_similarity,
+                            calculate_solo_compound_combination_score)
+from wtv.utils import (average_rts_for_duplicated_indices, check_rt_data,
+                       create_ion_matrix, filter_and_sort_combinations,
+                       read_msp, write_msp)
+
+# logger = logging.getLogger(__name__)
+
+
 
 
 def run_ion_selection(
@@ -209,7 +202,9 @@ def generate_ion_combinations(
     def process_compound(args):
         targeted_compound, nearby_compound_list = args
 
-        logging.info(f"Processing compound: {targeted_compound} with nearby compounds: {nearby_compound_list}")
+        logging.info(
+            f"Processing compound: {targeted_compound} with nearby compounds: {nearby_compound_list}"
+        )
 
         if nearby_compound_list == [targeted_compound]:
             row = get_ions_for_single_compound(
@@ -241,6 +236,7 @@ def generate_ion_combinations(
         combination_result_df.loc[targeted_compound] = pd.Series(row)
     return combination_result_df
 
+
 def calculate_ion_combination(
     min_ion_num,
     prefer_mz_threshold,
@@ -266,7 +262,9 @@ def calculate_ion_combination(
         )
         return row
 
-    similar_compound_list = get_similar_compounds(similarity_threshold, fr_factor, targeted_compound, temp_df)
+    similar_compound_list = get_similar_compounds(
+        similarity_threshold, fr_factor, targeted_compound, temp_df
+    )
 
     row["Similar_Compound_List"] = similar_compound_list
     temp_df.drop(index=similar_compound_list, inplace=True)
@@ -322,7 +320,10 @@ def calculate_ion_combination(
     flag = True
 
     while True:
-        if (int((combination_df.max()).iloc[0]) >= int(temp_df.shape[0] - 1) and ion_num >= min_ion_num) or not flag:
+        if (
+            int((combination_df.max()).iloc[0]) >= int(temp_df.shape[0] - 1)
+            and ion_num >= min_ion_num
+        ) or not flag:
             break
 
         n = n + 1
@@ -385,14 +386,12 @@ def calculate_ion_combination(
                     if i not in new_total:
                         new_total.append(i)
             if flag:  # Fixed equality comparison
-                difference_count_df_2 = (
-                    calculate_average_score_and_difference_count(
-                        targeted_compound,
-                        new_total,
-                        temp_df,
-                        similarity_threshold,
-                        fr_factor,
-                    )
+                difference_count_df_2 = calculate_average_score_and_difference_count(
+                    targeted_compound,
+                    new_total,
+                    temp_df,
+                    similarity_threshold,
+                    fr_factor,
                 )
 
                 if len(difference_count_df_2) > 0:
@@ -435,6 +434,7 @@ def calculate_ion_combination(
         if flag:  # Fixed equality comparison
             row["Ion_Combination"] = combination_array[0]
     return row
+
 
 def get_similar_compounds(similarity_threshold, fr_factor, targeted_compound, temp_df):
     similar_compound_list = []

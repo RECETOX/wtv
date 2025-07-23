@@ -1,16 +1,14 @@
 import unittest
 from pathlib import Path
-import pandas as pd
+
 import numpy as np
+import pandas as pd
 from matchms import Spectrum
-from matchms.importing import load_from_msp
 from matchms.exporting import save_as_msp
-from wtv.utils import (
-    average_rts_for_duplicated_indices,
-    create_ion_matrix,
-    read_msp,
-    write_msp,
-)
+from matchms.importing import load_from_msp
+
+from wtv.utils import (average_rts_for_duplicated_indices, create_ion_matrix,
+                       read_msp, write_msp)
 
 
 class TestUtils(unittest.TestCase):

@@ -3,12 +3,8 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from wtv.ion_selection import (
-    filter_matrix,
-    generate_ion_combinations,
-    get_nearby_compound_ions,
-    get_nearby_compounds,
-)
+from wtv.ion_selection import (filter_matrix, generate_ion_combinations,
+                               get_nearby_compound_ions, get_nearby_compounds)
 
 
 class TestIonSelection(unittest.TestCase):

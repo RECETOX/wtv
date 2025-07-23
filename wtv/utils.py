@@ -1,6 +1,6 @@
+import logging
 from pathlib import Path
 from typing import Dict, Tuple
-import logging
 
 logger = logging.getLogger(__name__)
 import numpy as np
@@ -11,11 +11,12 @@ from matchms.exporting.metadata_export import get_metadata_as_array
 from matchms.importing import load_from_msp
 
 
-def normalize_array(array, desired_max = 100):
+def normalize_array(array, desired_max=100):
     actual_max = np.max(array)
     zero_to_one_array = array / actual_max
     normalized_array = zero_to_one_array * desired_max
     return normalized_array
+
 
 def read_msp(
     msp_file_path: str, retention: str = "retention_time"
