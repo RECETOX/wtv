@@ -5,7 +5,7 @@ import numpy as np
 from matchms import Spectrum
 from matchms.importing import load_from_msp
 from matchms.exporting import save_as_msp
-from wtv.utils import create_ion_matrix, read_msp, write_msp
+from wtv.utils import average_rts_for_duplicated_indices, create_ion_matrix, read_msp, write_msp
 
 
 class TestUtils(unittest.TestCase):
@@ -89,6 +89,27 @@ class TestUtils(unittest.TestCase):
         ).T
 
         actual = create_ion_matrix(50, 400, meta)
+        assert actual.equals(expected)
+    
+    def test_create_ion_matrix_2(self):
+        meta, _ = read_msp(Path("test_data/sample_data/RECETOX_Exposome_GC-EI-MS_v2.msp"))
+        actual = create_ion_matrix(70, 800, meta)
+        assert np.count_nonzero(actual) == 25740
+    
+    def test_average_rts_for_duplicated_indices(self):
+        rt_data = pd.DataFrame(
+            {
+                "RT": [5.0, 6.0, 10.0],
+            },
+            index=["Compound1", "Compound1", "Compound2"],
+        )
+        expected = pd.DataFrame(
+            {
+                "RT": [5.5, 10.0],
+            },
+            index=["Compound1", "Compound2"],
+        )
+        actual = average_rts_for_duplicated_indices(rt_data)
         assert actual.equals(expected)
 
 

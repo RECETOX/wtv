@@ -81,22 +81,13 @@ def create_ion_matrix(mz_min, mz_max, meta_1):
     Returns:
         pd.DataFrame: DataFrame with compounds as rows, ions as columns, and ion intensities as values.
     """
-    matrix = pd.DataFrame()
-    for name, dic in meta_1.items():
-        b = {name: dic}
-        y = pd.DataFrame.from_dict(b).T
-        matrix = pd.concat([matrix, y], axis=0, join="outer").fillna(0)
+    # Build DataFrame directly from meta_1
+    matrix = pd.DataFrame.from_dict(meta_1, orient="index").fillna(0)
 
-    for col_name in list(matrix):
-        if (
-            type(col_name) not in [float, int, np.float64, np.int64]
-            and not col_name.isdigit()  # Fixed equality comparison
-        ):
-            matrix.drop(columns=col_name, inplace=True)
+    # Filter columns to keep only m/z values within range, assuming all are float
+    valid_cols = [col for col in matrix.columns if mz_min <= float(col) <= mz_max]
+    matrix = matrix[valid_cols]
 
-    for ion in list(matrix):
-        if int(ion) < mz_min or int(ion) > mz_max:
-            matrix.drop(columns=ion, inplace=(True))
     return matrix
 
 def filter_matrix(
@@ -165,3 +156,16 @@ def check_rt_data(RT_data):
         ):
             logger.error(f"RT format error for index: {index_1}")
             # RT_data.drop(index=index_1, inplace=True)
+
+def average_rts_for_duplicated_indices(RT_data):
+    """
+    Average the retention times for duplicated indices in the RT data.
+
+    Args:
+        RT_data (pd.DataFrame): DataFrame containing retention time data.
+
+    Returns:
+        pd.DataFrame: DataFrame with averaged retention times for duplicated indices.
+    """
+    RT_data = RT_data.groupby(RT_data.index).mean()
+    return RT_data

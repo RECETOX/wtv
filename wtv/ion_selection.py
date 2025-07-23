@@ -14,7 +14,7 @@ import numpy as np
 import pandas as pd
 
 from wtv.similarity import calculate_average_score_and_difference_count, calculate_combination_score, calculate_similarity, calculate_solo_compound_combination_score
-from wtv.utils import create_ion_matrix, filter_and_sort_combinations, filter_matrix, read_msp, write_msp
+from wtv.utils import average_rts_for_duplicated_indices, check_rt_data, create_ion_matrix, filter_and_sort_combinations, filter_matrix, read_msp, write_msp
 
 
 
@@ -33,6 +33,8 @@ def run_ion_selection(
 ):
     meta_1, RT_data = read_msp(msp_file_path)
     matrix = create_ion_matrix(mz_min, mz_max, meta_1)
+
+    RT_data = average_rts_for_duplicated_indices(RT_data)
 
     check_rt_data(RT_data)
 
@@ -91,7 +93,6 @@ def get_nearby_compounds(rt_window, RT_data):
         ].index.tolist()
         
     return nearby_compound_dic
-
 
 
 def generate_ion_combinations(min_ion_intensity_percent, min_ion_num, prefer_mz_threshold, similarity_threshold, fr_factor, RT_data, matrix, nearby_compound_dic):
