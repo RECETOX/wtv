@@ -1,6 +1,6 @@
 import argparse
 from pathlib import Path
-from wtv.ion_selection import main as run_ion_selection
+from wtv.ion_selection import run_ion_selection
 
 
 def parse_args():

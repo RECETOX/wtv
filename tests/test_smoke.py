@@ -1,7 +1,7 @@
 import unittest
 from pathlib import Path
 
-from wtv.ion_selection import main as run_ion_selection
+from wtv.ion_selection import run_ion_selection as run_ion_selection
 from test_data import get_test_file
 
 
@@ -26,8 +26,8 @@ class TestSmoke(unittest.TestCase):
     def test_smoke(self):
         # Run the Main method
         run_ion_selection(
-            msp_file_path=self.msp_path,
-            output_directory=str(self.outpath),
+            msp_file_path=Path(self.msp_path),
+            output_directory=Path(self.outpath),
             mz_min=35,
             mz_max=400,
             rt_window=2.00,

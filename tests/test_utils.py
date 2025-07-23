@@ -5,7 +5,7 @@ import numpy as np
 from matchms import Spectrum
 from matchms.importing import load_from_msp
 from matchms.exporting import save_as_msp
-from wtv.utils import read_msp, write_msp
+from wtv.utils import create_ion_matrix, read_msp, write_msp
 
 
 class TestUtils(unittest.TestCase):
@@ -72,6 +72,25 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(len(spectra[1].peaks.mz), 1)
         self.assertEqual(spectra[0].peaks.mz[0], 100)
         self.assertEqual(spectra[1].peaks.mz[0], 150)
+    
+    def test_create_ion_matrix(self):
+        meta = {
+            "Compound1": {100.0: 10, 200.0: 20, 300.0: 30},
+            "Compound2": {150.0: 15, 250.0: 25, 350.0: 35}
+        }
+
+        expected = pd.DataFrame(
+            {
+                "Compound1": [10, 20, 30, 0, 0, 0],
+                "Compound2": [0, 0, 0, 15, 25, 35]
+            },
+            index=[100.0, 200.0, 300.0, 150.0, 250.0, 350.0],
+            dtype=float
+        ).T
+
+        actual = create_ion_matrix(50, 400, meta)
+        assert actual.equals(expected)
+
 
 
 if __name__ == "__main__":
