@@ -14,7 +14,7 @@ import numpy as np
 import pandas as pd
 
 from wtv.similarity import calculate_average_score_and_difference_count, calculate_combination_score, calculate_similarity, calculate_solo_compound_combination_score
-from wtv.utils import average_rts_for_duplicated_indices, check_rt_data, create_ion_matrix, filter_and_sort_combinations, filter_matrix, read_msp, write_msp
+from wtv.utils import average_rts_for_duplicated_indices, check_rt_data, create_ion_matrix, filter_and_sort_combinations, read_msp, write_msp
 
 
 
@@ -31,19 +31,36 @@ def run_ion_selection(
     fr_factor,
     retention_time_max,
 ):
+    RT_data, matrix = load_data(msp_file_path, mz_min, mz_max)
+
+    combination_result_df = generate_ion_combinations(
+        min_ion_intensity_percent,
+        min_ion_num,
+        prefer_mz_threshold,
+        similarity_threshold,
+        fr_factor,
+        RT_data,
+        matrix,
+        rt_window
+    )
+    
+    ion_rt = get_ion_rt(
+        retention_time_max,
+        RT_data,
+        combination_result_df
+    )
+
+    write_msp(ion_rt, output_directory, msp_file_path)
+
+def load_data(msp_file_path, mz_min, mz_max):
     meta_1, RT_data = read_msp(msp_file_path)
     matrix = create_ion_matrix(mz_min, mz_max, meta_1)
-
     RT_data = average_rts_for_duplicated_indices(RT_data)
-
     check_rt_data(RT_data)
-
     RT_data = RT_data.sort_values(by="RT")
-    nearby_compound_dic = get_nearby_compounds(rt_window, RT_data)
+    return RT_data,matrix
 
-    combination_result_df = generate_ion_combinations(min_ion_intensity_percent, min_ion_num, prefer_mz_threshold, similarity_threshold, fr_factor, RT_data, matrix, nearby_compound_dic)
-
-
+def get_ion_rt(retention_time_max, RT_data, combination_result_df):
     name_list_total = []
     num = []
     name_list = combination_result_df.index.values.tolist()
@@ -80,8 +97,7 @@ def run_ion_selection(
     for idx, row in ion_rt.iterrows():
         if row["RT"] > retention_time_max:
             ion_rt.loc[idx, "RT"] = retention_time_max
-
-    write_msp(ion_rt, output_directory, msp_file_path)
+    return ion_rt
 
 def get_nearby_compounds(rt_window, RT_data):
     nearby_compound_dic = {}
@@ -95,7 +111,34 @@ def get_nearby_compounds(rt_window, RT_data):
     return nearby_compound_dic
 
 
-def generate_ion_combinations(min_ion_intensity_percent, min_ion_num, prefer_mz_threshold, similarity_threshold, fr_factor, RT_data, matrix, nearby_compound_dic):
+def filter_matrix(
+    matrix: pd.DataFrame, compound: str, min_ion_intensity: float
+) -> pd.DataFrame:
+    """
+    Return a DataFrame of ions for the given compound with intensity above the threshold.
+    """
+    compound_series = matrix.loc[compound]
+    filtered = compound_series[compound_series >= min_ion_intensity]
+    if isinstance(filtered, pd.Series):
+        filtered = filtered.to_frame(name=compound)
+    else:
+        filtered = filtered.T
+
+    filtered.dropna(how='all', inplace=True)
+    filtered.replace(np.nan, 0, inplace=True)
+    filtered["ion"] = filtered.index.astype(float)
+    
+    return filtered
+
+def generate_ion_combinations(
+    min_ion_intensity_percent,
+    min_ion_num,
+    prefer_mz_threshold,
+    similarity_threshold,
+    fr_factor,
+    RT_data, matrix,
+    rt_window
+):
     combination_result_df = pd.DataFrame(
         columns=[
             "RT",
@@ -105,6 +148,8 @@ def generate_ion_combinations(min_ion_intensity_percent, min_ion_num, prefer_mz_
             "SCL_Note",
         ]
     )
+
+    nearby_compound_dic = get_nearby_compounds(rt_window, RT_data)
 
     min_ion_intensity = min_ion_intensity_percent
 
@@ -145,14 +190,7 @@ def generate_ion_combinations(min_ion_intensity_percent, min_ion_num, prefer_mz_
                 )
                 solo_list.append(targeted_compound)
         else:
-            temp_df = matrix.loc[nearby_compound_list]
-            temp_df = temp_df.astype(float)
-            temp_df.loc[targeted_compound, :] = np.where(
-                temp_df.loc[targeted_compound, :] < min_ion_intensity,
-                0,
-                temp_df.loc[targeted_compound, :],
-            )
-            temp_df = temp_df.loc[:, temp_df.loc[targeted_compound, :] > 0]
+            temp_df = get_nearby_compound_ions(matrix, min_ion_intensity, targeted_compound, nearby_compound_list)
 
             if temp_df.shape[1] < 2:
                 combination_result_df.loc[targeted_compound, "Ion_Combination"] = "NA"
@@ -406,4 +444,15 @@ def generate_ion_combinations(min_ion_intensity_percent, min_ion_num, prefer_mz_
                             ] = combination_array[0]
                             
     return combination_result_df
+
+def get_nearby_compound_ions(matrix, min_ion_intensity, targeted_compound, nearby_compound_list):
+    temp_df = matrix.loc[nearby_compound_list]
+    temp_df = temp_df.astype(float)
+    temp_df.loc[targeted_compound, :] = np.where(
+                temp_df.loc[targeted_compound, :] < min_ion_intensity,
+                0,
+                temp_df.loc[targeted_compound, :],
+            )
+    temp_df = temp_df.loc[:, temp_df.loc[targeted_compound, :] > 0]
+    return temp_df
 

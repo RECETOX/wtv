@@ -1,9 +1,13 @@
 import unittest
 import numpy as np
-from wtv.similarity import dot_product_distance
+import pandas as pd
+from wtv.similarity import calculate_solo_compound_combination_score, dot_product_distance
 
 
 class TestDotProductDistance(unittest.TestCase):
+    def setUp(self):
+        self.solo_compound = pd.DataFrame({"Compound1": [20.0, 30.0], "ion": [204.09, 300.0]}, index=[204.09, 300.0])
+    
     def test_valid_vectors(self):
         # Test with valid vectors
         p = np.array([1, 2, 3])
@@ -39,6 +43,16 @@ class TestDotProductDistance(unittest.TestCase):
         q = np.array([4, 5])
         with self.assertRaises(ValueError):
             dot_product_distance(p, q)
+    
+    def test_calculate_solo_compound_combination_score(self):
+        actual = calculate_solo_compound_combination_score(self.solo_compound, 250)
+        expected = pd.DataFrame({
+            "Compound1": [30.0, 20.0],
+            "ion": [300.0, 1.0],
+            "com_score": [1.478851e+08, 4.472136]
+        }, index=[300.0, 204.09])
+        
+        pd.testing.assert_frame_equal(actual, expected)
 
 
 if __name__ == "__main__":

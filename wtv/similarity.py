@@ -135,7 +135,7 @@ def calculate_average_score_and_difference_count(
 
 
 def calculate_combination_score(
-    combination_df, targeted_compound, temp_df, prefer_mz_threshold
+    combination_df: pd.DataFrame, targeted_compound: str, temp_df: pd.DataFrame, prefer_mz_threshold: float
 ):
     """
     Calculate the combination score for ion combinations in a DataFrame.
@@ -151,8 +151,7 @@ def calculate_combination_score(
 
     """
     for index, _ in combination_df.iterrows():
-        ion_list = re.findall(r"\d+\.?\d*", index)
-        ion_list = list(map(float, ion_list))
+        ion_list = get_ion_list(index)
         new_temp_df = temp_df.loc[str(targeted_compound), ion_list].to_frame()
         new_temp_df["ion"] = new_temp_df.index.tolist()
         new_temp_df["ion"] = new_temp_df["ion"].astype("int")
@@ -166,7 +165,12 @@ def calculate_combination_score(
 
     return combination_df
 
-def calculate_solo_compound_combination_score(matrix_1, prefer_mz_threshold):
+def get_ion_list(index):
+    ion_list = re.findall(r"\d+\.?\d*", index)
+    ion_list = list(map(float, ion_list))
+    return ion_list
+
+def calculate_solo_compound_combination_score(matrix_1: pd.DataFrame, prefer_mz_threshold: float):
     """
     Calculate the combination score for solo compounds in a DataFrame.
 
@@ -178,11 +182,11 @@ def calculate_solo_compound_combination_score(matrix_1, prefer_mz_threshold):
         pd.DataFrame: DataFrame with combination scores added and sorted by score.
 
     """
-    matrix_1["ion"] = matrix_1["ion"].apply(
+    solo_scores = matrix_1.copy()
+    solo_scores["ion"] = matrix_1["ion"].apply(
         lambda x: 1 if x < prefer_mz_threshold else x
     )
-    matrix_1["com_score"] = matrix_1.apply(
+    solo_scores["com_score"] = solo_scores.apply(
         lambda row: pow(row.iloc[0], 0.5) * pow(row.iloc[1], 3), axis=1
     )
-    matrix_1 = matrix_1.sort_values(by="com_score", ascending=False)
-    return matrix_1
+    return solo_scores.sort_values(by="com_score", ascending=False)

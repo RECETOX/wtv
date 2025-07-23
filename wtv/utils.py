@@ -90,36 +90,6 @@ def create_ion_matrix(mz_min, mz_max, meta_1):
 
     return matrix
 
-def filter_matrix(
-    matrix: pd.DataFrame, compound: str, min_ion_intensity: float
-) -> pd.DataFrame:
-    """
-    Filter the matrix for a specific compound based on minimum ion intensity.
-
-    Args:
-        matrix (pd.DataFrame): The DataFrame containing compound data.
-        compound (str): The name of the compound to filter.
-        min_ion_intensity (float): The minimum ion intensity threshold.
-
-    Returns:
-        pd.DataFrame: A filtered DataFrame containing ions with intensity above the threshold.
-    """
-    # Extract the compound data as a DataFrame
-    matrix_1 = matrix.loc[compound].to_frame()
-
-    # Add a column for ion values converted to integers
-    matrix_1["ion"] = matrix_1.index.astype(int)
-
-    # Apply the minimum ion intensity threshold
-    matrix_1[compound] = np.where(
-        matrix_1[compound].astype(float) < min_ion_intensity,
-        0,
-        matrix_1[compound].astype(float),
-    )
-
-    # Return the filtered DataFrame with ions above the threshold
-    return matrix_1.loc[matrix_1[compound] > 0, :]
-
 
 def filter_and_sort_combinations(
     combination_df: pd.DataFrame, score_column: str
