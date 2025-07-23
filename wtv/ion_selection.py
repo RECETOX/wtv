@@ -33,7 +33,7 @@ def run_ion_selection(
     similarity_threshold: float,
     fr_factor: float,
     retention_time_max: float,
-):
+) -> None:
     logging.info(f"Loading data from file at {msp_file_path}.")
     RT_data, matrix = load_data(msp_file_path, mz_min, mz_max)
 
@@ -56,7 +56,9 @@ def run_ion_selection(
     write_msp(ion_rt, output_directory, msp_file_path)
 
 
-def load_data(msp_file_path: Path, mz_min: float, mz_max: float):
+def load_data(
+    msp_file_path: Path, mz_min: float, mz_max: float
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     meta_1, RT_data = read_msp(msp_file_path)
     matrix = create_ion_matrix(mz_min, mz_max, meta_1)
 
@@ -71,7 +73,7 @@ def get_ion_rt(
     retention_time_max: float,
     RT_data: pd.DataFrame,
     combination_result_df: pd.DataFrame,
-):
+) -> pd.DataFrame:
     name_list_total = []
     num = []
     name_list = combination_result_df.index.values.tolist()
@@ -115,7 +117,7 @@ def get_ion_rt(
     return ion_rt
 
 
-def get_nearby_compounds(rt_window: float, RT_data: pd.DataFrame):
+def get_nearby_compounds(rt_window: float, RT_data: pd.DataFrame) -> dict:
     nearby_compound_dic = {}
     for name in RT_data.index.values.tolist():
         rt = RT_data.at[name, "RT"]
@@ -154,7 +156,7 @@ def get_ions_for_single_compound(
     min_ion_intensity: float,
     prefer_mz_threshold: float,
     min_ion_num: int,
-):
+) -> dict:
     row: dict = {}
     row["RT"] = RT_data.loc[targeted_compound, "RT"]
     row["Similar_Compound_List"] = []
@@ -190,7 +192,7 @@ def generate_ion_combinations(
     RT_data: pd.DataFrame,
     matrix: pd.DataFrame,
     rt_window: float,
-):
+) -> pd.DataFrame:
     combination_result_df = pd.DataFrame(
         columns=[
             "RT",
@@ -253,7 +255,7 @@ def calculate_ion_combination(
     min_ion_intensity: float,
     targeted_compound: str,
     nearby_compound_list: list[str],
-):
+) -> dict:
     row: dict = {}
     row["RT"] = RT_data.loc[targeted_compound, "RT"]
 
@@ -447,7 +449,7 @@ def get_similar_compounds(
     fr_factor: float,
     targeted_compound: str,
     temp_df: pd.DataFrame,
-):
+) -> list[str]:
     similar_compound_list = []
     result_df_1 = calculate_similarity(targeted_compound, temp_df, fr_factor)
     for index, df_row in result_df_1.iterrows():
@@ -461,7 +463,7 @@ def get_nearby_compound_ions(
     min_ion_intensity: float,
     targeted_compound: str,
     nearby_compound_list: list[str],
-):
+) -> pd.DataFrame:
     temp_df = matrix.loc[nearby_compound_list]
     temp_df = temp_df.astype(float)
     temp_df.loc[targeted_compound, :] = np.where(
