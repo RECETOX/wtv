@@ -21,20 +21,18 @@ from wtv.utils import (average_rts_for_duplicated_indices, check_rt_data,
 # logger = logging.getLogger(__name__)
 
 
-
-
 def run_ion_selection(
     msp_file_path: Path,
     output_directory: Path,
-    mz_min,
-    mz_max,
-    rt_window,
-    min_ion_intensity_percent,
-    min_ion_num,
-    prefer_mz_threshold,
-    similarity_threshold,
-    fr_factor,
-    retention_time_max,
+    mz_min: float,
+    mz_max: float,
+    rt_window: float,
+    min_ion_intensity_percent: float,
+    min_ion_num: int,
+    prefer_mz_threshold: float,
+    similarity_threshold: float,
+    fr_factor: float,
+    retention_time_max: float,
 ):
     logging.info(f"Loading data from file at {msp_file_path}.")
     RT_data, matrix = load_data(msp_file_path, mz_min, mz_max)
@@ -51,21 +49,29 @@ def run_ion_selection(
         rt_window,
     )
 
+    logging.info("Collecting ion retention times.")
     ion_rt = get_ion_rt(retention_time_max, RT_data, combination_result_df)
 
+    logging.info("Writing MSP file.")
     write_msp(ion_rt, output_directory, msp_file_path)
 
 
-def load_data(msp_file_path, mz_min, mz_max):
+def load_data(msp_file_path: Path, mz_min: float, mz_max: float):
     meta_1, RT_data = read_msp(msp_file_path)
     matrix = create_ion_matrix(mz_min, mz_max, meta_1)
+
     RT_data = average_rts_for_duplicated_indices(RT_data)
     check_rt_data(RT_data)
     RT_data = RT_data.sort_values(by="RT")
+
     return RT_data, matrix
 
 
-def get_ion_rt(retention_time_max, RT_data, combination_result_df):
+def get_ion_rt(
+    retention_time_max: float,
+    RT_data: pd.DataFrame,
+    combination_result_df: pd.DataFrame,
+):
     name_list_total = []
     num = []
     name_list = combination_result_df.index.values.tolist()
@@ -109,7 +115,7 @@ def get_ion_rt(retention_time_max, RT_data, combination_result_df):
     return ion_rt
 
 
-def get_nearby_compounds(rt_window, RT_data):
+def get_nearby_compounds(rt_window: float, RT_data: pd.DataFrame):
     nearby_compound_dic = {}
     for name in RT_data.index.values.tolist():
         rt = RT_data.at[name, "RT"]
@@ -142,12 +148,12 @@ def filter_matrix(
 
 
 def get_ions_for_single_compound(
-    RT_data,
-    targeted_compound,
-    matrix,
-    min_ion_intensity,
-    prefer_mz_threshold,
-    min_ion_num,
+    RT_data: pd.DataFrame,
+    targeted_compound: str,
+    matrix: pd.DataFrame,
+    min_ion_intensity: float,
+    prefer_mz_threshold: float,
+    min_ion_num: int,
 ):
     row: dict = {}
     row["RT"] = RT_data.loc[targeted_compound, "RT"]
@@ -176,14 +182,14 @@ def get_ions_for_single_compound(
 
 
 def generate_ion_combinations(
-    min_ion_intensity_percent,
-    min_ion_num,
-    prefer_mz_threshold,
-    similarity_threshold,
-    fr_factor,
-    RT_data,
-    matrix,
-    rt_window,
+    min_ion_intensity_percent: float,
+    min_ion_num: int,
+    prefer_mz_threshold: float,
+    similarity_threshold: float,
+    fr_factor: float,
+    RT_data: pd.DataFrame,
+    matrix: pd.DataFrame,
+    rt_window: float,
 ):
     combination_result_df = pd.DataFrame(
         columns=[
@@ -238,15 +244,15 @@ def generate_ion_combinations(
 
 
 def calculate_ion_combination(
-    min_ion_num,
-    prefer_mz_threshold,
-    similarity_threshold,
-    fr_factor,
-    RT_data,
-    matrix,
-    min_ion_intensity,
-    targeted_compound,
-    nearby_compound_list,
+    min_ion_num: int,
+    prefer_mz_threshold: float,
+    similarity_threshold: float,
+    fr_factor: float,
+    RT_data: pd.DataFrame,
+    matrix: pd.DataFrame,
+    min_ion_intensity: float,
+    targeted_compound: str,
+    nearby_compound_list: list[str],
 ):
     row: dict = {}
     row["RT"] = RT_data.loc[targeted_compound, "RT"]
@@ -436,7 +442,12 @@ def calculate_ion_combination(
     return row
 
 
-def get_similar_compounds(similarity_threshold, fr_factor, targeted_compound, temp_df):
+def get_similar_compounds(
+    similarity_threshold: float,
+    fr_factor: float,
+    targeted_compound: str,
+    temp_df: pd.DataFrame,
+):
     similar_compound_list = []
     result_df_1 = calculate_similarity(targeted_compound, temp_df, fr_factor)
     for index, df_row in result_df_1.iterrows():
@@ -446,7 +457,10 @@ def get_similar_compounds(similarity_threshold, fr_factor, targeted_compound, te
 
 
 def get_nearby_compound_ions(
-    matrix, min_ion_intensity, targeted_compound, nearby_compound_list
+    matrix: pd.DataFrame,
+    min_ion_intensity: float,
+    targeted_compound: str,
+    nearby_compound_list: list[str],
 ):
     temp_df = matrix.loc[nearby_compound_list]
     temp_df = temp_df.astype(float)

@@ -84,7 +84,7 @@ def write_msp(
     save_as_msp(filtered_spectra, filtered_msp_path)
 
 
-def create_ion_matrix(mz_min, mz_max, meta_1):
+def create_ion_matrix(mz_min: float, mz_max: float, meta_1: dict) -> pd.DataFrame:
     """Create a matrix of ions with compounds on the rows, mz values for ions on the columns, and ion intensities as values.
 
     Args:
@@ -127,7 +127,7 @@ def filter_and_sort_combinations(
     return combination_df[combination_df[score_column] >= combination_df.iat[0, 1]]
 
 
-def check_rt_data(RT_data):
+def check_rt_data(RT_data: pd.DataFrame) -> None:
     duplicated_index = RT_data.index[RT_data.index.duplicated()]
     for index in duplicated_index:
         logger.error(f"Duplicated RT for index: {index}")
@@ -142,7 +142,7 @@ def check_rt_data(RT_data):
             # RT_data.drop(index=index_1, inplace=True)
 
 
-def average_rts_for_duplicated_indices(RT_data):
+def average_rts_for_duplicated_indices(RT_data: pd.DataFrame) -> pd.DataFrame:
     """
     Average the retention times for duplicated indices in the RT data.
 
