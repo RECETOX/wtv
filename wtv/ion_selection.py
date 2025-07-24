@@ -18,9 +18,6 @@ from wtv.utils import (average_rts_for_duplicated_indices, check_rt_data,
                        create_ion_matrix, filter_and_sort_combinations,
                        read_msp, write_msp)
 
-# logger = logging.getLogger(__name__)
-
-
 def run_ion_selection(
     msp_file_path: Path,
     output_directory: Path,

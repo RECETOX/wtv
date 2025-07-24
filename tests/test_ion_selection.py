@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from wtv.ion_selection import (filter_matrix, generate_ion_combinations,
+from wtv.ion_selection import (filter_matrix, generate_ion_combinations, get_ion_rt,
                                get_nearby_compound_ions, get_nearby_compounds)
 
 
@@ -24,6 +24,22 @@ class TestIonSelection(unittest.TestCase):
                 "RT": [5.0, 6.0, 10.0],
             },
             index=["Compound1", "Compound2", "Compound3"],
+        )
+
+        self.combination_results = pd.DataFrame(
+            {
+                "RT": [5.0, 6.0, 10.0],
+                "Ion_Combination": [
+                    list([300.0, 204.09]),
+                    "[300.0, 350.0]",
+                    list([300.0, 250.0]),
+                ],
+                "Note": [np.nan, np.nan, np.nan],
+                "Similar_Compound_List": [["Compound2"], [], []],
+                "SCL_Note": [np.nan, np.nan, "No adjacent compounds."],
+            },
+            index=["Compound1", "Compound2", "Compound3"],
+            dtype=object,
         )
 
     def test_get_nearby_compounds(self):
@@ -98,4 +114,13 @@ class TestIonSelection(unittest.TestCase):
             dtype=object,
         )
 
+        pd.testing.assert_frame_equal(actual, self.combination_results)
+
+    def test_get_ion_rt(self):
+        actual = get_ion_rt(100, self.rt_data, self.combination_results)
+        expected = pd.DataFrame({
+            "RT": [5.0, 5.0, 6.0, 6.0, 10.0, 10.0],
+            "ion": [300.0, 204.0, 300.0, 350.0, 300.0, 250.0],
+            }, index=["Compound1", "Compound1", "Compound2", "Compound2", "Compound3", "Compound3"]
+        )
         pd.testing.assert_frame_equal(actual, expected)

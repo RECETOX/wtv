@@ -1,4 +1,5 @@
 import logging
+import os
 from pathlib import Path
 from typing import Dict, Tuple
 
@@ -80,7 +81,7 @@ def write_msp(
         )
         # Add the filtered spectrum to the list
         filtered_spectra.append(filtered_spectrum)
-    filtered_msp_path = str(output_directory / "filtered_ions.msp")
+    filtered_msp_path = str(output_directory / os.path.basename(source_msp_file))
     save_as_msp(filtered_spectra, filtered_msp_path)
 
 
