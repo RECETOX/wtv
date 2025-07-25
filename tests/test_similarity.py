@@ -3,8 +3,10 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from wtv.similarity import (calculate_solo_compound_combination_score,
-                            dot_product_distance)
+from wtv.similarity import (
+    calculate_solo_compound_combination_score,
+    dot_product_distance,
+)
 
 
 class TestSimilarity(unittest.TestCase):

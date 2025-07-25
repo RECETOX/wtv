@@ -3,33 +3,43 @@
 # Original publication: https://doi.org/10.1016/j.molp.2024.04.012
 
 
-import concurrent
 import logging
 import re
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from wtv.similarity import (calculate_average_score_and_difference_count,
-                            calculate_combination_score, calculate_similarity,
-                            calculate_solo_compound_combination_score)
-from wtv.utils import (average_rts_for_duplicated_indices, check_rt_data,
-                       create_ion_matrix, filter_and_sort_combinations,
-                       read_msp, write_msp)
+from wtv.similarity import (
+    calculate_average_score_and_difference_count,
+    calculate_combination_score,
+    calculate_similarity,
+    calculate_solo_compound_combination_score,
+)
+from wtv.utils import (
+    average_rts_for_duplicated_indices,
+    check_rt_data,
+    create_ion_matrix,
+    filter_and_sort_combinations,
+    load_data,
+    read_msp,
+    write_msp,
+)
+
 
 def run_ion_selection(
     msp_file_path: Path,
     output_directory: Path,
-    mz_min: float,
-    mz_max: float,
-    rt_window: float,
-    min_ion_intensity_percent: float,
-    min_ion_num: int,
-    prefer_mz_threshold: float,
-    similarity_threshold: float,
-    fr_factor: float,
-    retention_time_max: float,
+    mz_min: float = 0,
+    mz_max: float = np.inf,
+    rt_window: float = 1,
+    min_ion_intensity_percent: float = 5,
+    min_ion_num: int = 3,
+    prefer_mz_threshold: float = 150,
+    similarity_threshold: float = 0.85,
+    fr_factor: float = 2,
+    retention_time_max: float = np.inf,
 ) -> None:
     logging.info(f"Loading data from file at {msp_file_path}.")
     RT_data, matrix = load_data(msp_file_path, mz_min, mz_max)
@@ -51,19 +61,6 @@ def run_ion_selection(
 
     logging.info("Writing MSP file.")
     write_msp(ion_rt, output_directory, msp_file_path)
-
-
-def load_data(
-    msp_file_path: Path, mz_min: float, mz_max: float
-) -> tuple[pd.DataFrame, pd.DataFrame]:
-    meta_1, RT_data = read_msp(msp_file_path)
-    matrix = create_ion_matrix(mz_min, mz_max, meta_1)
-
-    RT_data = average_rts_for_duplicated_indices(RT_data)
-    check_rt_data(RT_data)
-    RT_data = RT_data.sort_values(by="RT")
-
-    return RT_data, matrix
 
 
 def get_ion_rt(
@@ -234,8 +231,10 @@ def generate_ion_combinations(
             )
         return targeted_compound, row
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=12) as executor:
-        results = list(executor.map(process_compound, nearby_compound_dic.items()))
+    # with ThreadPoolExecutor() as executor:
+    #     results = list(executor.map(process_compound, nearby_compound_dic.items()))
+
+    results = list(map(process_compound, nearby_compound_dic.items()))
 
     for targeted_compound, row in results:
         combination_result_df.loc[targeted_compound] = pd.Series(row)
@@ -406,7 +405,7 @@ def calculate_ion_combination(
                     ]
                 else:
                     row["Ion_Combination"] = "NA"
-                    row["Note"] = "Error: The 'difference_count_df' is " "empty."
+                    row["Note"] = "Error: The 'difference_count_df' is empty."
                     flag = False
 
                     break

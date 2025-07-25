@@ -1,7 +1,7 @@
 import logging
 import os
 from pathlib import Path
-from typing import Dict, Tuple
+from typing import Dict, Generator, Tuple
 
 logger = logging.getLogger(__name__)
 import numpy as np
@@ -35,6 +35,23 @@ def read_msp(
             - A DataFrame with columns 'Name' and 'RT'.
     """
     spectra = list(load_from_msp(msp_file_path, metadata_harmonization=True))
+    meta = get_ion_dict(spectra)
+    df = get_rt_data(retention, spectra)
+    return meta, df
+
+
+def get_rt_data(retention, spectra):
+    spectra_md, _ = get_metadata_as_array(spectra)
+    df = (
+        pd.DataFrame(spectra_md)
+        .rename(columns={"compound_name": "Name", retention: "RT"})
+        .get(["Name", "RT"])
+    )
+    df.set_index("Name", inplace=True)
+    return df
+
+
+def get_ion_dict(spectra):
     meta = {}
     # rt_data = []
     for spectrum in spectra:
@@ -43,33 +60,39 @@ def read_msp(
         name = spectrum.metadata.get("compound_name")
         ion_intens_dic = {}
 
-        for mz, intensity in zip(spectrum.mz, spectrum.intensities):
+        intensities = normalize_array(spectrum.peaks.intensities)
+        for mz, intensity in zip(spectrum.mz, intensities):
             key = float(mz)
             value = int(intensity)
             ion_intens_dic[key] = value
         meta[name] = ion_intens_dic
+    return meta
 
-    spectra_md, _ = get_metadata_as_array(spectra)
-    df = (
-        pd.DataFrame(spectra_md)
-        .rename(columns={"compound_name": "Name", retention: "RT"})
-        .get(["Name", "RT"])
-    )
-    df.set_index("Name", inplace=True)
-    return meta, df
+
+def load_data(
+    msp_file_path: Path, mz_min: float, mz_max: float
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    meta_1, RT_data = read_msp(msp_file_path)
+    matrix = create_ion_matrix(mz_min, mz_max, meta_1)
+
+    RT_data = average_rts_for_duplicated_indices(RT_data)
+    check_rt_data(RT_data)
+    RT_data = RT_data.sort_values(by="RT")
+
+    return RT_data, matrix
 
 
 def write_msp(
     ion_df: pd.DataFrame, output_directory: Path, source_msp_file: Path
 ) -> None:
-    spectra = load_from_msp(source_msp_file)
+    spectra = list(load_from_msp(source_msp_file))
     grouped_ions = ion_df.groupby(ion_df.index)
     filtered_spectra = []  # List to store filtered spectra
-    for spectrum in spectra:
-        if spectrum is None:
-            continue  # Skip empty spectra
-        name = spectrum.metadata.get("compound_name")
-        ions = grouped_ions.get_group(name)
+    for compound, ions in grouped_ions:
+        spectrum: Spectrum = [
+            x for x in spectra if x.metadata.get("compound_name") == compound
+        ][0]
+
         mzs_to_keep = ions["ion"].values
         mask = np.isin(spectrum.peaks.mz, mzs_to_keep)
         # Apply the filter
@@ -83,6 +106,21 @@ def write_msp(
         filtered_spectra.append(filtered_spectrum)
     filtered_msp_path = str(output_directory / os.path.basename(source_msp_file))
     save_as_msp(filtered_spectra, filtered_msp_path)
+
+
+def get_filtered_spectra(
+    spectra: list[Spectrum], combinations: pd.DataFrame
+) -> Generator[Spectrum, None, None]:
+    for spectrum in spectra:
+        group = spectrum.get("compound_name")
+        ions = combinations.loc[group, "Ion_Combination"]
+        if ions is not "NA":
+            mask = np.isin(spectrum.peaks.mz, ions)
+            yield Spectrum(
+                mz=spectrum.peaks.mz[mask],
+                intensities=spectrum.peaks.intensities[mask],
+                metadata=spectrum.metadata,
+            )
 
 
 def create_ion_matrix(mz_min: float, mz_max: float, meta_1: dict) -> pd.DataFrame:
@@ -155,3 +193,32 @@ def average_rts_for_duplicated_indices(RT_data: pd.DataFrame) -> pd.DataFrame:
     """
     RT_data = RT_data.groupby(RT_data.index).mean()
     return RT_data
+
+
+def parse_spectra(
+    spectra: list[Spectrum],
+    retention: str = "retention_time",
+    mz_min: float = 0,
+    mz_max: float = 1000,
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Parse spectra to create a matrix of ion intensities and a DataFrame of retention times.
+
+    Args:
+        spectra (list[Spectrum]): List of Spectrum objects.
+
+    Returns:
+        Tuple[pd.DataFrame, pd.DataFrame]: A tuple containing:
+            - DataFrame with ion intensities.
+            - DataFrame with retention times.
+    """
+    rt_data = average_rts_for_duplicated_indices(get_rt_data(retention, spectra))
+    check_rt_data(rt_data)
+    rt_data.sort_values(by="RT", inplace=True)
+
+    meta = get_ion_dict(spectra)
+    matrix = create_ion_matrix(
+        mz_min, mz_max, meta
+    )  # Assuming m/z range from 0 to 1000
+
+    return matrix, rt_data

@@ -7,8 +7,14 @@ from matchms import Spectrum
 from matchms.exporting import save_as_msp
 from matchms.importing import load_from_msp
 
-from wtv.utils import (average_rts_for_duplicated_indices, create_ion_matrix,
-                       read_msp, write_msp)
+from wtv.utils import (
+    average_rts_for_duplicated_indices,
+    create_ion_matrix,
+    get_filtered_spectra,
+    parse_spectra,
+    read_msp,
+    write_msp,
+)
 
 
 class TestUtils(unittest.TestCase):
@@ -113,6 +119,46 @@ class TestUtils(unittest.TestCase):
         )
         actual = average_rts_for_duplicated_indices(rt_data)
         assert actual.equals(expected)
+
+    def test_parse_spectra(self):
+        actual = parse_spectra(self.mock_spectra)
+        assert actual is not None
+
+
+class TestWriteFilteredSpectra(unittest.TestCase):
+    def setUp(self):
+        self.spectra = [
+            Spectrum(
+                mz=np.array([100, 200, 300], dtype=float),
+                intensities=np.array([10, 20, 30], dtype=float),
+                metadata={"compound_name": "Compound1", "retention_time": 5.0},
+            ),
+            Spectrum(
+                mz=np.array([150, 250, 350], dtype=float),
+                intensities=np.array([15, 25, 35], dtype=float),
+                metadata={"compound_name": "Compound2", "retention_time": 10.0},
+            ),
+        ]
+
+        self.combinations = pd.DataFrame(
+            {
+                "RT": [5.0, 6.0, 10.0],
+                "Ion_Combination": [
+                    list([300.0, 204.09]),
+                    list([300.0, 350.0]),
+                    list([300.0, 250.0]),
+                ],
+                "Note": [np.nan, np.nan, np.nan],
+                "Similar_Compound_List": [["Compound2"], [], []],
+                "SCL_Note": [np.nan, np.nan, "No adjacent compounds."],
+            },
+            index=["Compound1", "Compound2", "Compound3"],
+            dtype=object,
+        )
+
+    def test_get_filtered_spectra(self):
+        actual = list(get_filtered_spectra(self.spectra, self.combinations))
+        assert len(actual) == 2
 
 
 if __name__ == "__main__":

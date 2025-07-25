@@ -2,7 +2,11 @@ import argparse
 import logging
 from pathlib import Path
 
-from wtv.ion_selection import run_ion_selection
+from matchms.exporting import save_spectra
+from matchms.importing import load_spectra
+
+from wtv.ion_selection import generate_ion_combinations, run_ion_selection
+from wtv.utils import get_filtered_spectra, parse_spectra
 
 
 def parse_args():
@@ -84,6 +88,27 @@ def main():
         fr_factor=args.fr_factor,
         retention_time_max=args.retention_time_max,
     )
+
+
+def main_v2():
+    args = parse_args()
+
+    spectra = list(load_spectra(args.msp_path))
+    matrix, rts = parse_spectra(spectra, mz_min=args.mz_min, mz_max=args.mz_max)
+
+    combination_result_df = generate_ion_combinations(
+        min_ion_intensity_percent=args.min_ion_intensity_percent,
+        min_ion_num=args.min_ion_num,
+        prefer_mz_threshold=args.prefer_mz_threshold,
+        similarity_threshold=args.similarity_threshold,
+        fr_factor=args.fr_factor,
+        RT_data=rts,
+        matrix=matrix,
+        rt_window=args.rt_window,
+    )
+
+    results = get_filtered_spectra(spectra, combination_result_df)
+    save_spectra(results, args.outpath)
 
 
 if __name__ == "__main__":
