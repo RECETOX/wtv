@@ -1,11 +1,20 @@
 import unittest
 from pathlib import Path
-import pandas as pd
+
 import numpy as np
+import pandas as pd
 from matchms import Spectrum
-from matchms.importing import load_from_msp
 from matchms.exporting import save_as_msp
-from wtv.utils import read_msp, write_msp
+from matchms.importing import load_from_msp
+
+from wtv.utils import (
+    average_rts_for_duplicated_indices,
+    create_ion_matrix,
+    get_filtered_spectra,
+    parse_spectra,
+    read_msp,
+    write_msp,
+)
 
 
 class TestUtils(unittest.TestCase):
@@ -72,6 +81,84 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(len(spectra[1].peaks.mz), 1)
         self.assertEqual(spectra[0].peaks.mz[0], 100)
         self.assertEqual(spectra[1].peaks.mz[0], 150)
+
+    def test_create_ion_matrix(self):
+        meta = {
+            "Compound1": {100.0: 10, 200.0: 20, 300.0: 30},
+            "Compound2": {150.0: 15, 250.0: 25, 350.0: 35},
+        }
+
+        expected = pd.DataFrame(
+            {"Compound1": [10, 20, 30, 0, 0, 0], "Compound2": [0, 0, 0, 15, 25, 35]},
+            index=[100.0, 200.0, 300.0, 150.0, 250.0, 350.0],
+            dtype=float,
+        ).T
+
+        actual = create_ion_matrix(50, 400, meta)
+        assert actual.equals(expected)
+
+    def test_create_ion_matrix_2(self):
+        meta, _ = read_msp(
+            Path("test_data/sample_data/RECETOX_Exposome_GC-EI-MS_v2.msp")
+        )
+        actual = create_ion_matrix(70, 800, meta)
+        assert np.count_nonzero(actual) == 25740
+
+    def test_average_rts_for_duplicated_indices(self):
+        rt_data = pd.DataFrame(
+            {
+                "RT": [5.0, 6.0, 10.0],
+            },
+            index=["Compound1", "Compound1", "Compound2"],
+        )
+        expected = pd.DataFrame(
+            {
+                "RT": [5.5, 10.0],
+            },
+            index=["Compound1", "Compound2"],
+        )
+        actual = average_rts_for_duplicated_indices(rt_data)
+        assert actual.equals(expected)
+
+    def test_parse_spectra(self):
+        actual = parse_spectra(self.mock_spectra)
+        assert actual is not None
+
+
+class TestWriteFilteredSpectra(unittest.TestCase):
+    def setUp(self):
+        self.spectra = [
+            Spectrum(
+                mz=np.array([100, 200, 300], dtype=float),
+                intensities=np.array([10, 20, 30], dtype=float),
+                metadata={"compound_name": "Compound1", "retention_time": 5.0},
+            ),
+            Spectrum(
+                mz=np.array([150, 250, 350], dtype=float),
+                intensities=np.array([15, 25, 35], dtype=float),
+                metadata={"compound_name": "Compound2", "retention_time": 10.0},
+            ),
+        ]
+
+        self.combinations = pd.DataFrame(
+            {
+                "RT": [5.0, 6.0, 10.0],
+                "Ion_Combination": [
+                    list([300.0, 204.09]),
+                    list([300.0, 350.0]),
+                    list([300.0, 250.0]),
+                ],
+                "Note": [np.nan, np.nan, np.nan],
+                "Similar_Compound_List": [["Compound2"], [], []],
+                "SCL_Note": [np.nan, np.nan, "No adjacent compounds."],
+            },
+            index=["Compound1", "Compound2", "Compound3"],
+            dtype=object,
+        )
+
+    def test_get_filtered_spectra(self):
+        actual = list(get_filtered_spectra(self.spectra, self.combinations))
+        assert len(actual) == 2
 
 
 if __name__ == "__main__":

@@ -1,6 +1,12 @@
 import argparse
+import logging
 from pathlib import Path
-from wtv.ion_selection import main as run_ion_selection
+
+from matchms.exporting import save_spectra
+from matchms.importing import load_spectra
+
+from wtv.ion_selection import generate_ion_combinations, run_ion_selection
+from wtv.utils import get_filtered_spectra, parse_spectra
 
 
 def parse_args():
@@ -8,37 +14,19 @@ def parse_args():
         description="Generate methods for compound analysis."
     )
     parser.add_argument(
-        "--msp_path", 
-        type=str, 
-        required=True, 
-        help="Path to the MSP file."
+        "--msp_path", type=str, required=True, help="Path to the MSP file."
     )
     parser.add_argument(
-        "--outpath", 
-        type=str, 
-        required=True, 
-        help="Output path for results."
+        "--outpath", type=str, required=True, help="Output path for results."
     )
     parser.add_argument(
-        "--mz_min", 
-        type=int, 
-        required=True, 
-        help="Minimum m/z value.", 
-        default=35
+        "--mz_min", type=int, required=True, help="Minimum m/z value.", default=35
     )
     parser.add_argument(
-        "--mz_max", 
-        type=int, 
-        required=True, 
-        help="Maximum m/z value.", 
-        default=400
+        "--mz_max", type=int, required=True, help="Maximum m/z value.", default=400
     )
     parser.add_argument(
-        "--rt_window", 
-        type=float, 
-        required=True, 
-        help="RT window value.", 
-        default=2.00
+        "--rt_window", type=float, required=True, help="RT window value.", default=2.00
     )
     parser.add_argument(
         "--min_ion_intensity_percent",
@@ -83,6 +71,10 @@ def parse_args():
 
 def main():
     args = parse_args()
+
+    logging.basicConfig(level=logging.INFO)
+    logging.info(f"Parsed arguments successfully ({args}).")
+
     run_ion_selection(
         msp_file_path=Path(args.msp_path),
         output_directory=Path(args.outpath),
@@ -96,6 +88,27 @@ def main():
         fr_factor=args.fr_factor,
         retention_time_max=args.retention_time_max,
     )
+
+
+def main_v2():
+    args = parse_args()
+
+    spectra = list(load_spectra(args.msp_path))
+    matrix, rts = parse_spectra(spectra, mz_min=args.mz_min, mz_max=args.mz_max)
+
+    combination_result_df = generate_ion_combinations(
+        min_ion_intensity_percent=args.min_ion_intensity_percent,
+        min_ion_num=args.min_ion_num,
+        prefer_mz_threshold=args.prefer_mz_threshold,
+        similarity_threshold=args.similarity_threshold,
+        fr_factor=args.fr_factor,
+        RT_data=rts,
+        matrix=matrix,
+        rt_window=args.rt_window,
+    )
+
+    results = get_filtered_spectra(spectra, combination_result_df)
+    save_spectra(results, args.outpath)
 
 
 if __name__ == "__main__":
