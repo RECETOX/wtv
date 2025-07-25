@@ -27,13 +27,12 @@ class TestSmoke(unittest.TestCase):
                 output_path.unlink()  # Remove the file
 
     def tearDown(self):
-        pass
         # Clean up output files after tests
-        # for file in os.listdir(self.outpath):
-        #     filepath = self.outpath / file
-        #     if filepath.is_file():
-        #         filepath.unlink()
-        #     self.outpath.rmdir()  # Remove the output directory if empty
+        for file in os.listdir(self.outpath):
+            filepath = self.outpath / file
+            if filepath.is_file():
+                filepath.unlink()
+            self.outpath.rmdir()  # Remove the output directory if empty
 
     @parameterized.expand(
         [
