@@ -9,10 +9,8 @@
       
       
       
-        <link rel="prev" href="../api_utils/">
+        <link rel="prev" href="../api_ion_selection/">
       
-      
-        <link rel="next" href="../api_similarity/">
       
       
         
@@ -23,7 +21,7 @@
     
     
       
-        <title>Ion Selection - WTV Documentation</title>
+        <title>Similarity - WTV Documentation</title>
       
     
     
@@ -64,7 +62,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#api-reference-ion-selection" class="md-skip">
+        <a href="#api-reference-similarity" class="md-skip">
           Skip to content
         </a>
       
@@ -100,7 +98,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Ion Selection
+              Similarity
             
           </span>
         </div>
@@ -433,6 +431,34 @@
                 
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../api_ion_selection/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ion Selection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
     
   
   
@@ -452,7 +478,7 @@
   <span class="md-ellipsis">
     
   
-    Ion Selection
+    Similarity
   
 
     
@@ -470,7 +496,7 @@
   <span class="md-ellipsis">
     
   
-    Ion Selection
+    Similarity
   
 
     
@@ -496,15 +522,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#run_ion_selection" class="md-nav__link">
+  <a href="#dot_product_distance" class="md-nav__link">
     <span class="md-ellipsis">
       
-        run_ion_selection
+        dot_product_distance
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="run_ion_selection">
+    <nav class="md-nav" aria-label="dot_product_distance">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -512,6 +538,17 @@
     <span class="md-ellipsis">
       
         Parameters
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#returns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Returns
       
     </span>
   </a>
@@ -535,15 +572,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#generate_ion_combinations" class="md-nav__link">
+  <a href="#weighted_dot_product_distance" class="md-nav__link">
     <span class="md-ellipsis">
       
-        generate_ion_combinations
+        weighted_dot_product_distance
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="generate_ion_combinations">
+    <nav class="md-nav" aria-label="weighted_dot_product_distance">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -558,7 +595,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#returns" class="md-nav__link">
+  <a href="#returns_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Returns
@@ -574,22 +611,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#other-functions" class="md-nav__link">
+  <a href="#calculate_similarity" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Other Functions
+        calculate_similarity
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Other Functions">
+    <nav class="md-nav" aria-label="calculate_similarity">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#get_ion_rt" class="md-nav__link">
+  <a href="#parameters_2" class="md-nav__link">
     <span class="md-ellipsis">
       
-        get_ion_rt
+        Parameters
       
     </span>
   </a>
@@ -597,10 +634,38 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#get_nearby_compounds" class="md-nav__link">
+  <a href="#returns_2" class="md-nav__link">
     <span class="md-ellipsis">
       
-        get_nearby_compounds
+        Returns
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#calculate_average_score_and_difference_count" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        calculate_average_score_and_difference_count
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="calculate_average_score_and_difference_count">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#parameters_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Parameters
       
     </span>
   </a>
@@ -608,10 +673,38 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#filter_matrix" class="md-nav__link">
+  <a href="#returns_3" class="md-nav__link">
     <span class="md-ellipsis">
       
-        filter_matrix
+        Returns
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#calculate_combination_score" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        calculate_combination_score
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="calculate_combination_score">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#parameters_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Parameters
       
     </span>
   </a>
@@ -619,10 +712,49 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#calculate_ion_combination" class="md-nav__link">
+  <a href="#returns_4" class="md-nav__link">
     <span class="md-ellipsis">
       
-        calculate_ion_combination
+        Returns
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#calculate_solo_compound_combination_score" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        calculate_solo_compound_combination_score
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="calculate_solo_compound_combination_score">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#parameters_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Parameters
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#returns_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Returns
       
     </span>
   </a>
@@ -638,34 +770,6 @@
   
 </nav>
       
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../api_similarity/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Similarity
-  
-
-    
-  </span>
-  
-  
-
-      </a>
     </li>
   
 
@@ -705,15 +809,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#run_ion_selection" class="md-nav__link">
+  <a href="#dot_product_distance" class="md-nav__link">
     <span class="md-ellipsis">
       
-        run_ion_selection
+        dot_product_distance
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="run_ion_selection">
+    <nav class="md-nav" aria-label="dot_product_distance">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -721,6 +825,17 @@
     <span class="md-ellipsis">
       
         Parameters
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#returns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Returns
       
     </span>
   </a>
@@ -744,15 +859,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#generate_ion_combinations" class="md-nav__link">
+  <a href="#weighted_dot_product_distance" class="md-nav__link">
     <span class="md-ellipsis">
       
-        generate_ion_combinations
+        weighted_dot_product_distance
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="generate_ion_combinations">
+    <nav class="md-nav" aria-label="weighted_dot_product_distance">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -767,7 +882,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#returns" class="md-nav__link">
+  <a href="#returns_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Returns
@@ -783,22 +898,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#other-functions" class="md-nav__link">
+  <a href="#calculate_similarity" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Other Functions
+        calculate_similarity
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Other Functions">
+    <nav class="md-nav" aria-label="calculate_similarity">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#get_ion_rt" class="md-nav__link">
+  <a href="#parameters_2" class="md-nav__link">
     <span class="md-ellipsis">
       
-        get_ion_rt
+        Parameters
       
     </span>
   </a>
@@ -806,10 +921,38 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#get_nearby_compounds" class="md-nav__link">
+  <a href="#returns_2" class="md-nav__link">
     <span class="md-ellipsis">
       
-        get_nearby_compounds
+        Returns
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#calculate_average_score_and_difference_count" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        calculate_average_score_and_difference_count
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="calculate_average_score_and_difference_count">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#parameters_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Parameters
       
     </span>
   </a>
@@ -817,10 +960,38 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#filter_matrix" class="md-nav__link">
+  <a href="#returns_3" class="md-nav__link">
     <span class="md-ellipsis">
       
-        filter_matrix
+        Returns
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#calculate_combination_score" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        calculate_combination_score
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="calculate_combination_score">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#parameters_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Parameters
       
     </span>
   </a>
@@ -828,10 +999,49 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#calculate_ion_combination" class="md-nav__link">
+  <a href="#returns_4" class="md-nav__link">
     <span class="md-ellipsis">
       
-        calculate_ion_combination
+        Returns
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#calculate_solo_compound_combination_score" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        calculate_solo_compound_combination_score
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="calculate_solo_compound_combination_score">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#parameters_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Parameters
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#returns_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Returns
       
     </span>
   </a>
@@ -860,109 +1070,47 @@
 
 
 
-<h1 id="api-reference-ion-selection">API Reference: Ion Selection</h1>
-<p>This document describes the ion selection functions in <code>wtv.ion_selection</code>.</p>
-<h2 id="run_ion_selection"><code>run_ion_selection</code></h2>
-<p>Main function for performing ion selection on MSP files.</p>
+<h1 id="api-reference-similarity">API Reference: Similarity</h1>
+<p>This document describes the similarity calculation functions in <code>wtv.similarity</code>.</p>
+<h2 id="dot_product_distance"><code>dot_product_distance</code></h2>
+<p>Calculate the dot product distance between two vectors.</p>
 <h3 id="parameters">Parameters</h3>
 <table>
 <thead>
 <tr>
 <th>Parameter</th>
 <th>Type</th>
-<th>Default</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>msp_file_path</code></td>
-<td>Path</td>
-<td>Required</td>
-<td>Path to the input MSP file</td>
+<td><code>p</code></td>
+<td>np.ndarray</td>
+<td>First vector</td>
 </tr>
 <tr>
-<td><code>output_directory</code></td>
-<td>Path</td>
-<td>Required</td>
-<td>Directory to save the output files</td>
-</tr>
-<tr>
-<td><code>mz_min</code></td>
-<td>float</td>
-<td>0</td>
-<td>Minimum m/z value</td>
-</tr>
-<tr>
-<td><code>mz_max</code></td>
-<td>float</td>
-<td>inf</td>
-<td>Maximum m/z value</td>
-</tr>
-<tr>
-<td><code>rt_window</code></td>
-<td>float</td>
-<td>1</td>
-<td>Retention time window for finding nearby compounds</td>
-</tr>
-<tr>
-<td><code>min_ion_intensity_percent</code></td>
-<td>float</td>
-<td>5</td>
-<td>Minimum ion intensity percentage</td>
-</tr>
-<tr>
-<td><code>min_ion_num</code></td>
-<td>int</td>
-<td>3</td>
-<td>Minimum number of ions required</td>
-</tr>
-<tr>
-<td><code>prefer_mz_threshold</code></td>
-<td>float</td>
-<td>150</td>
-<td>Preferred m/z threshold</td>
-</tr>
-<tr>
-<td><code>similarity_threshold</code></td>
-<td>float</td>
-<td>0.85</td>
-<td>Similarity threshold for compound matching</td>
-</tr>
-<tr>
-<td><code>fr_factor</code></td>
-<td>float</td>
-<td>2</td>
-<td>Fragment ratio factor</td>
-</tr>
-<tr>
-<td><code>retention_time_max</code></td>
-<td>float</td>
-<td>inf</td>
-<td>Maximum retention time</td>
+<td><code>q</code></td>
+<td>np.ndarray</td>
+<td>Second vector</td>
 </tr>
 </tbody>
 </table>
+<h3 id="returns">Returns</h3>
+<ul>
+<li><code>float</code>: Dot product distance between the two vectors (0 to 1)</li>
+</ul>
 <h3 id="example">Example</h3>
-<pre><code class="language-python">from pathlib import Path
-from wtv.ion_selection import run_ion_selection
+<pre><code class="language-python">import numpy as np
+from wtv.similarity import dot_product_distance
 
-run_ion_selection(
-    msp_file_path=Path(&quot;input.msp&quot;),
-    output_directory=Path(&quot;output&quot;),
-    mz_min=35,
-    mz_max=400,
-    rt_window=2.00,
-    min_ion_intensity_percent=7,
-    min_ion_num=2,
-    prefer_mz_threshold=60,
-    similarity_threshold=0.85,
-    fr_factor=2.0,
-    retention_time_max=68.80,
-)
+p = np.array([1, 2, 3])
+q = np.array([4, 5, 6])
+score = dot_product_distance(p, q)
+print(f&quot;Similarity score: {score}&quot;)
 </code></pre>
-<h2 id="generate_ion_combinations"><code>generate_ion_combinations</code></h2>
-<p>Generate optimal ion combinations for compounds based on similarity and retention time proximity.</p>
+<h2 id="weighted_dot_product_distance"><code>weighted_dot_product_distance</code></h2>
+<p>Calculate the weighted dot product distance with fragment ratio consideration.</p>
 <h3 id="parameters_1">Parameters</h3>
 <table>
 <thead>
@@ -974,60 +1122,163 @@ run_ion_selection(
 </thead>
 <tbody>
 <tr>
-<td><code>min_ion_intensity_percent</code></td>
-<td>float</td>
-<td>Minimum ion intensity percentage</td>
+<td><code>compare_df</code></td>
+<td>pd.DataFrame</td>
+<td>DataFrame with two columns representing vectors to compare</td>
 </tr>
 <tr>
-<td><code>min_ion_num</code></td>
-<td>int</td>
-<td>Minimum number of ions</td>
+<td><code>fr_factor</code></td>
+<td>float</td>
+<td>Factor used in the FR calculation</td>
+</tr>
+</tbody>
+</table>
+<h3 id="returns_1">Returns</h3>
+<ul>
+<li><code>float</code>: Composite score based on weighted dot product distance and fragment ratio</li>
+</ul>
+<h2 id="calculate_similarity"><code>calculate_similarity</code></h2>
+<p>Calculate similarity scores between a target compound and all compounds in a DataFrame.</p>
+<h3 id="parameters_2">Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>target_name</code></td>
+<td>str</td>
+<td>Name of the target compound</td>
+</tr>
+<tr>
+<td><code>df</code></td>
+<td>pd.DataFrame</td>
+<td>DataFrame containing compound data</td>
+</tr>
+<tr>
+<td><code>fr_factor</code></td>
+<td>float</td>
+<td>Factor used in the weighted dot product distance calculation</td>
+</tr>
+</tbody>
+</table>
+<h3 id="returns_2">Returns</h3>
+<ul>
+<li><code>pd.DataFrame</code>: DataFrame containing similarity scores for each compound</li>
+</ul>
+<h2 id="calculate_average_score_and_difference_count"><code>calculate_average_score_and_difference_count</code></h2>
+<p>Calculate the average similarity score and difference count for a targeted compound.</p>
+<h3 id="parameters_3">Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>targeted_compound</code></td>
+<td>str</td>
+<td>Name of the targeted compound</td>
+</tr>
+<tr>
+<td><code>ion_combination</code></td>
+<td>list</td>
+<td>List of ion combinations for similarity calculation</td>
+</tr>
+<tr>
+<td><code>df</code></td>
+<td>pd.DataFrame</td>
+<td>DataFrame containing compound data</td>
+</tr>
+<tr>
+<td><code>similarity_threshold</code></td>
+<td>float</td>
+<td>Similarity threshold for considering compounds as similar</td>
+</tr>
+<tr>
+<td><code>fr_factor</code></td>
+<td>float</td>
+<td>Factor used in the weighted dot product distance calculation</td>
+</tr>
+</tbody>
+</table>
+<h3 id="returns_3">Returns</h3>
+<ul>
+<li><code>pd.DataFrame</code>: DataFrame containing difference counts and average similarity scores</li>
+</ul>
+<h2 id="calculate_combination_score"><code>calculate_combination_score</code></h2>
+<p>Calculate the combination score for ion combinations.</p>
+<h3 id="parameters_4">Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>combination_df</code></td>
+<td>pd.DataFrame</td>
+<td>DataFrame containing ion combinations</td>
+</tr>
+<tr>
+<td><code>targeted_compound</code></td>
+<td>str</td>
+<td>Name of the targeted compound</td>
+</tr>
+<tr>
+<td><code>temp_df</code></td>
+<td>pd.DataFrame</td>
+<td>Temporary DataFrame containing compound data</td>
 </tr>
 <tr>
 <td><code>prefer_mz_threshold</code></td>
 <td>float</td>
 <td>Preferred m/z threshold</td>
 </tr>
+</tbody>
+</table>
+<h3 id="returns_4">Returns</h3>
+<ul>
+<li><code>pd.DataFrame</code>: DataFrame with combination scores added</li>
+</ul>
+<h2 id="calculate_solo_compound_combination_score"><code>calculate_solo_compound_combination_score</code></h2>
+<p>Calculate the combination score for solo compounds.</p>
+<h3 id="parameters_5">Parameters</h3>
+<table>
+<thead>
 <tr>
-<td><code>similarity_threshold</code></td>
-<td>float</td>
-<td>Similarity threshold</td>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
 </tr>
+</thead>
+<tbody>
 <tr>
-<td><code>fr_factor</code></td>
-<td>float</td>
-<td>Fragment ratio factor</td>
-</tr>
-<tr>
-<td><code>RT_data</code></td>
+<td><code>matrix_1</code></td>
 <td>pd.DataFrame</td>
-<td>DataFrame with retention time data</td>
+<td>DataFrame containing solo compound data</td>
 </tr>
 <tr>
-<td><code>matrix</code></td>
-<td>pd.DataFrame</td>
-<td>DataFrame with ion intensities</td>
-</tr>
-<tr>
-<td><code>rt_window</code></td>
+<td><code>prefer_mz_threshold</code></td>
 <td>float</td>
-<td>Retention time window</td>
+<td>Preferred m/z threshold</td>
 </tr>
 </tbody>
 </table>
-<h3 id="returns">Returns</h3>
+<h3 id="returns_5">Returns</h3>
 <ul>
-<li><code>pd.DataFrame</code>: DataFrame containing ion combinations for each compound</li>
+<li><code>pd.DataFrame</code>: DataFrame with combination scores added and sorted by score</li>
 </ul>
-<h2 id="other-functions">Other Functions</h2>
-<h3 id="get_ion_rt"><code>get_ion_rt</code></h3>
-<p>Collect retention times for selected ions.</p>
-<h3 id="get_nearby_compounds"><code>get_nearby_compounds</code></h3>
-<p>Find compounds within a retention time window.</p>
-<h3 id="filter_matrix"><code>filter_matrix</code></h3>
-<p>Filter ions by intensity threshold.</p>
-<h3 id="calculate_ion_combination"><code>calculate_ion_combination</code></h3>
-<p>Calculate optimal ion combination for a compound.</p>
 
 
 
