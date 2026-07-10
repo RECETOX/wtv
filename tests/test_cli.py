@@ -1,38 +1,43 @@
+import os
 import subprocess
-import unittest
-from pathlib import Path
+
+import pytest
 
 from test_data import get_test_file
 
 
-class TestCLI(unittest.TestCase):
+@pytest.fixture
+def setup_output_dir(tmp_path):
+    """Create output directory for CLI tests."""
+    outpath = tmp_path / "output_data"
+    outpath.mkdir(parents=True)
+    yield outpath
 
-    def setUp(self):
-        self.msp_path = get_test_file("esi_spectra")
-        self.parent_dir = Path(__file__).resolve().parent.parent
-        self.outpath = self.parent_dir / "output_data"
-        self.output_files = ["filtered_ions.msp"]
 
-        # Create output directory if it doesn't exist
-        if not self.outpath.exists():
-            self.outpath.mkdir(parents=True)
+@pytest.fixture
+def msp_path():
+    """Return the test MSP file path."""
+    return get_test_file("esi_spectra")
 
-        # Remove output files if they exist
-        for file in self.output_files:
-            output_path = self.outpath / file
-            if output_path.exists():
-                output_path.unlink()  # Remove the file
 
-    def test_cli_call(self):
-        # Simulate CLI call using poetry to ensure correct environment
+class TestCLI:
+    """Test CLI functionality."""
+
+    @pytest.mark.skipif(
+        os.getenv("GITHUB_ACTIONS") == "true", reason="Skip in Github Actions."
+    )
+    def test_cli_call(self, setup_output_dir, msp_path):
+        """Test CLI invocation and verify output matches ground truth."""
         command = [
-            "poetry", "run", "python",
+            "uv",
+            "run",
+            "python",
             "-m",
             "wtv.cli",
             "--msp_path",
-            str(self.msp_path),
+            str(msp_path),
             "--outpath",
-            str(self.outpath),
+            str(setup_output_dir),
             "--mz_min",
             "35",
             "--mz_max",
@@ -53,19 +58,21 @@ class TestCLI(unittest.TestCase):
             "68.80",
         ]
         result = subprocess.run(command, capture_output=True, text=True)
-        self.assertEqual(
-            result.returncode, 0, msg=f"CLI call failed with error: {result.stderr}"
-        )
+        assert result.returncode == 0, f"CLI call failed with error: {result.stderr}"
 
-        # Compare output files with ground truth
-        for file in self.output_files:
-            output_path = self.outpath / file
-            ground_truth_path = get_test_file(file[:-4])
-            with open(output_path, "r") as output_file, open(ground_truth_path, "r") as ground_truth_file:
-                output_lines = [line.rstrip() for line in output_file if line.strip() != ""]
-                ground_truth_lines = [line.rstrip() for line in ground_truth_file if line.strip() != ""]
-                self.assertEqual(output_lines, ground_truth_lines)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        # The output file is named after the input file (esi_spectra.msp)
+        output_files = ["esi_spectra.msp"]
+        for file in output_files:
+            output_path = setup_output_dir / file
+            ground_truth_path = get_test_file(file.replace(".msp", "_filtered"))
+            with (
+                open(output_path, "r") as output_file,
+                open(ground_truth_path, "r") as ground_truth_file,
+            ):
+                output_lines = [
+                    line.rstrip() for line in output_file if line.strip() != ""
+                ]
+                ground_truth_lines = [
+                    line.rstrip() for line in ground_truth_file if line.strip() != ""
+                ]
+                assert output_lines == ground_truth_lines

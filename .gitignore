@@ -175,3 +175,5 @@ output_data/*
 .secrets
 
 poetry.lock
+
+.vscode

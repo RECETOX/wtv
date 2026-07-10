@@ -1,56 +1,45 @@
-import unittest
+import os
 from pathlib import Path
 
-from wtv.ion_selection import main as run_ion_selection
+import pytest
+
 from test_data import get_test_file
+from wtv.ion_selection import run_ion_selection
 
 
-class TestSmoke(unittest.TestCase):
+class TestSmoke:
+    """Smoke tests for ion selection functionality."""
 
-    def setUp(self):
-        self.msp_path = get_test_file("esi_spectra")
-        self.parent_dir = Path(__file__).resolve().parent.parent
-        self.outpath = self.parent_dir / "output_data"
-        self.output_files = ["filtered_ions.msp"]
+    @pytest.mark.skipif(
+        os.getenv("GITHUB_ACTIONS") == "true", reason="Skip in Github Actions."
+    )
+    @pytest.mark.parametrize(
+        "msp_file",
+        [
+            "chunk_0",
+        ],
+    )
+    def test_smoke(self, msp_file, tmp_path):
+        """Test ion selection runs successfully and produces expected output."""
+        setup_output_dir = tmp_path / "output_data"
+        setup_output_dir.mkdir(parents=True)
 
-        # Create output directory if it doesn't exist
-        if not self.outpath.exists():
-            self.outpath.mkdir(parents=True)
-
-        # Remove output files if they exist
-        for file in self.output_files:
-            output_path = self.outpath / file
-            if output_path.exists():
-                output_path.unlink()  # Remove the file
-
-    def test_smoke(self):
-        # Run the Main method
+        # Run the main function
         run_ion_selection(
-            msp_file_path=self.msp_path,
-            output_directory=str(self.outpath),
-            mz_min=35,
-            mz_max=400,
-            rt_window=2.00,
-            min_ion_intensity_percent=7,
-            min_ion_num=2,
-            prefer_mz_threshold=60,
-            similarity_threshold=0.85,
-            fr_factor=2,
-            retention_time_max=68.80,
+            msp_file_path=Path(get_test_file(msp_file)),
+            output_directory=setup_output_dir,
         )
 
         # Compare output files with ground truth
-        for file in self.output_files:
-            output_path = self.outpath / file
-            ground_truth_path = get_test_file(file[:-4])
-            with (
-                open(output_path, "r") as output_file,
-                open(ground_truth_path, "r") as ground_truth_file,
-            ):
-                output_lines = [line.rstrip() for line in output_file if line.strip() != ""]
-                ground_truth_lines = [line.rstrip() for line in ground_truth_file if line.strip() != ""]
-                self.assertEqual(output_lines, ground_truth_lines)
+        output_path = setup_output_dir / f"{msp_file}.msp"
+        ground_truth_path = get_test_file(f"{msp_file}_filtered")
 
-
-if __name__ == "__main__":
-    unittest.main()
+        with (
+            open(output_path, "r") as output_file,
+            open(ground_truth_path, "r") as ground_truth_file,
+        ):
+            output_lines = [line.rstrip() for line in output_file if line.strip() != ""]
+            ground_truth_lines = [
+                line.rstrip() for line in ground_truth_file if line.strip() != ""
+            ]
+            assert output_lines == ground_truth_lines

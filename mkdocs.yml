@@ -4,8 +4,11 @@ nav:
   - Installation: installation.md
   - CLI Usage: cli_usage.md
   - Library Usage: library_usage.md
+  - Usage: usage.md
   - API Reference:
+      - Overview: api.md
       - Utils: api_utils.md
       - Ion Selection: api_ion_selection.md
+      - Similarity: api_similarity.md
 theme:
   name: material
