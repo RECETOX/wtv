@@ -1,5 +1,5 @@
-![PyPI - Version](https://img.shields.io/pypi/v/wtv)
-![Conda Version](https://img.shields.io/conda/vn/bioconda/wtv?style=flat)
+[![PyPI - Version](https://img.shields.io/pypi/v/wtv)](https://pypi.org/project/wtv/)
+[![Conda Version](https://img.shields.io/conda/vn/bioconda/wtv?style=flat)](https://anaconda.org/channels/bioconda/packages/wtv/overview)
 
 
 # wtv
