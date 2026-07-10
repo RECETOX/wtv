@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 import pytest
@@ -9,7 +10,7 @@ from wtv.ion_selection import run_ion_selection
 class TestSmoke:
     """Smoke tests for ion selection functionality."""
 
-    # @pytest.mark.skip(reason="Large test data file causes timeout - pre-existing issue")
+    @pytest.mark.skipif(os.getenv("GITHUB_ACTIONS") == "true", reason="Skip in Github Actions.")
     @pytest.mark.parametrize(
         "msp_file",
         [
