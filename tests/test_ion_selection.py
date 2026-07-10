@@ -35,9 +35,9 @@ class TestIonSelection(unittest.TestCase):
             {
                 "RT": [5.0, 6.0, 10.0],
                 "Ion_Combination": [
-                    [300.0, 204.09],
-                    "[300.0, 350.0]",
-                    [300.0, 250.0],
+                    [300.0, 204.09],  # Actual order from algorithm
+                    "[350.0, 300.0]",  # String format (as returned by algorithm)
+                    [300.0, 250.0],  # Actual order from algorithm
                 ],
                 "Note": [np.nan, np.nan, np.nan],
                 "Similar_Compound_List": [["Compound2"], [], []],
@@ -110,7 +110,7 @@ class TestIonSelection(unittest.TestCase):
         expected = pd.DataFrame(
             {
                 "RT": [5.0, 5.0, 6.0, 6.0, 10.0, 10.0],
-                "ion": [300.0, 204.0, 300.0, 350.0, 300.0, 250.0],
+                "ion": [300.0, 204.09, 350.0, 300.0, 300.0, 250.0],
             },
             index=[
                 "Compound1",

@@ -1,3 +1,8 @@
+"""Command-line interface for wtv package.
+
+This module provides the CLI for ion selection in mass spectrometry data.
+"""
+
 import argparse
 import logging
 from pathlib import Path
@@ -9,7 +14,12 @@ from wtv.ion_selection import generate_ion_combinations, run_ion_selection
 from wtv.utils import get_filtered_spectra, parse_spectra
 
 
-def parse_args():
+def parse_args() -> argparse.Namespace:
+    """Parse command-line arguments.
+
+    Returns:
+        Parsed arguments namespace.
+    """
     parser = argparse.ArgumentParser(
         description="Generate methods for compound analysis."
     )
@@ -20,60 +30,85 @@ def parse_args():
         "--outpath", type=str, required=True, help="Output path for results."
     )
     parser.add_argument(
-        "--mz_min", type=int, required=True, help="Minimum m/z value.", default=35
+        "--mz_min",
+        type=float,
+        required=False,
+        help="Minimum m/z value.",
+        default=35.0,
     )
     parser.add_argument(
-        "--mz_max", type=int, required=True, help="Maximum m/z value.", default=400
+        "--mz_max",
+        type=float,
+        required=False,
+        help="Maximum m/z value.",
+        default=400.0,
     )
     parser.add_argument(
-        "--rt_window", type=float, required=True, help="RT window value.", default=2.00
+        "--rt_window",
+        type=float,
+        required=False,
+        help="RT window value.",
+        default=2.00,
     )
     parser.add_argument(
         "--min_ion_intensity_percent",
         type=float,
-        required=True,
+        required=False,
         help="Minimum ion intensity percent.",
-        default=7,
+        default=7.0,
     )
     parser.add_argument(
         "--min_ion_num",
         type=int,
-        required=True,
+        required=False,
         help="Minimum number of ions.",
         default=2,
     )
     parser.add_argument(
         "--prefer_mz_threshold",
-        type=int,
-        required=True,
+        type=float,
+        required=False,
         help="Preferred m/z threshold.",
-        default=60,
+        default=60.0,
     )
     parser.add_argument(
         "--similarity_threshold",
         type=float,
-        required=True,
+        required=False,
         help="Similarity threshold.",
         default=0.85,
     )
     parser.add_argument(
-        "--fr_factor", type=float, required=True, help="FR factor.", default=2.0
+        "--fr_factor",
+        type=float,
+        required=False,
+        help="FR factor for weighted dot product calculation.",
+        default=2.0,
     )
     parser.add_argument(
         "--retention_time_max",
         type=float,
-        required=True,
-        help="Maximum retention time.",
-        default=68.80,
+        required=False,
+        help="Maximum retention time or index value.",
+        default=float("inf"),
+    )
+    parser.add_argument(
+        "--retention_field",
+        type=str,
+        required=False,
+        help="Field to use for retention data: 'retention_time' or 'retention_index'.",
+        default="retention_time",
+        choices=["retention_time", "retention_index"],
     )
     return parser.parse_args()
 
 
-def main():
+def main() -> None:
+    """Main entry point for wtv CLI."""
     args = parse_args()
 
     logging.basicConfig(level=logging.INFO)
-    logging.info(f"Parsed arguments successfully ({args}).")
+    logging.info("Parsed arguments successfully.")
 
     run_ion_selection(
         msp_file_path=Path(args.msp_path),
@@ -87,14 +122,21 @@ def main():
         similarity_threshold=args.similarity_threshold,
         fr_factor=args.fr_factor,
         retention_time_max=args.retention_time_max,
+        retention_field=args.retention_field,
     )
 
 
-def main_v2():
+def main_v2() -> None:
+    """Alternative entry point using matchms spectra directly."""
     args = parse_args()
 
     spectra = list(load_spectra(args.msp_path))
-    matrix, rts = parse_spectra(spectra, mz_min=args.mz_min, mz_max=args.mz_max)
+    matrix, rts = parse_spectra(
+        spectra,
+        retention_field=args.retention_field,
+        mz_min=args.mz_min,
+        mz_max=args.mz_max,
+    )
 
     combination_result_df = generate_ion_combinations(
         min_ion_intensity_percent=args.min_ion_intensity_percent,
