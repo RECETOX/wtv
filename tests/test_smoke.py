@@ -10,7 +10,9 @@ from wtv.ion_selection import run_ion_selection
 class TestSmoke:
     """Smoke tests for ion selection functionality."""
 
-    @pytest.mark.skipif(os.getenv("GITHUB_ACTIONS") == "true", reason="Skip in Github Actions.")
+    @pytest.mark.skipif(
+        os.getenv("GITHUB_ACTIONS") == "true", reason="Skip in Github Actions."
+    )
     @pytest.mark.parametrize(
         "msp_file",
         [

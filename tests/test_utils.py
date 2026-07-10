@@ -103,9 +103,7 @@ class TestUtils:
     # @pytest.mark.skip(reason="Requires large test data file")
     def test_create_ion_matrix_2(self):
         """Test creating ion matrix with large dataset."""
-        meta, _ = read_msp(
-            Path(get_test_file('ei_spectra'))
-        )
+        meta, _ = read_msp(Path(get_test_file("ei_spectra")))
         actual = create_ion_matrix(70, 800, meta)
         assert np.count_nonzero(actual) == 1609
 
