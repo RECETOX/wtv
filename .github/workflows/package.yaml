@@ -17,9 +17,9 @@ jobs:
     name: Build for ${{ matrix.os }} with Python 3.12.9
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Set up Python 3.12.9
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: 3.12.9
       - name: Python info
@@ -50,9 +50,9 @@ jobs:
     name: Linting build
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Set up Python 3.11
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: 3.11
       - name: Python info
