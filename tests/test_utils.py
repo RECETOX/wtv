@@ -7,6 +7,7 @@ from matchms import Spectrum
 from matchms.exporting import save_as_msp
 from matchms.importing import load_from_msp
 
+from test_data import get_test_file
 from wtv.utils import (
     average_rts_for_duplicated_indices,
     create_ion_matrix,
@@ -103,10 +104,10 @@ class TestUtils:
     def test_create_ion_matrix_2(self):
         """Test creating ion matrix with large dataset."""
         meta, _ = read_msp(
-            Path("https://zenodo.org/records/14285896/files/RECETOX_Exposome_GC-EI-MS_v2.msp?download=1")
+            Path(get_test_file('ei_spectra'))
         )
         actual = create_ion_matrix(70, 800, meta)
-        assert np.count_nonzero(actual) == 25740
+        assert np.count_nonzero(actual) == 1609
 
     def test_average_rts_for_duplicated_indices(self):
         """Test averaging RTs for duplicated indices."""

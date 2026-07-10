@@ -21,14 +21,14 @@ def normalize_array(array, desired_max=100):
 
 
 def read_msp(
-    msp_file_path: str, retention: str = "retention_time"
+    msp_file_path: Path, retention: str = "retention_time"
 ) -> Tuple[Dict[str, Dict[float, int]], pd.DataFrame]:
     """
     Read data from an MSP file and convert it into a dictionary format using matchms.
     Also, create a DataFrame with columns 'Name' and 'RT'.
 
     Args:
-        msp_file (str): The path to the MSP file.
+        msp_file (Path): The path to the MSP file.
 
     Returns:
         Tuple[Dict[str, Dict[int, int]], pd.DataFrame]: A tuple containing:
