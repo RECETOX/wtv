@@ -35,9 +35,9 @@ class TestIonSelection(unittest.TestCase):
             {
                 "RT": [5.0, 6.0, 10.0],
                 "Ion_Combination": [
-                    list([300.0, 204.09]),
+                    [300.0, 204.09],
                     "[300.0, 350.0]",
-                    list([300.0, 250.0]),
+                    [300.0, 250.0],
                 ],
                 "Note": [np.nan, np.nan, np.nan],
                 "Similar_Compound_List": [["Compound2"], [], []],
@@ -101,22 +101,6 @@ class TestIonSelection(unittest.TestCase):
             RT_data=self.rt_data,
             matrix=self.matrix,
             rt_window=2.0,
-        )
-
-        expected = pd.DataFrame(
-            {
-                "RT": [5.0, 6.0, 10.0],
-                "Ion_Combination": [
-                    list([300.0, 204.09]),
-                    "[300.0, 350.0]",
-                    list([300.0, 250.0]),
-                ],
-                "Note": [np.nan, np.nan, np.nan],
-                "Similar_Compound_List": [["Compound2"], [], []],
-                "SCL_Note": [np.nan, np.nan, "No adjacent compounds."],
-            },
-            index=["Compound1", "Compound2", "Compound3"],
-            dtype=object,
         )
 
         pd.testing.assert_frame_equal(actual, self.combination_results)

@@ -3,13 +3,14 @@ import os
 from pathlib import Path
 from typing import Dict, Generator, Tuple
 
-logger = logging.getLogger(__name__)
 import numpy as np
 import pandas as pd
 from matchms import Spectrum
 from matchms.exporting import save_as_msp
 from matchms.exporting.metadata_export import get_metadata_as_array
 from matchms.importing import load_from_msp
+
+logger = logging.getLogger(__name__)
 
 
 def normalize_array(array, desired_max=100):
@@ -61,7 +62,7 @@ def get_ion_dict(spectra):
         ion_intens_dic = {}
 
         intensities = normalize_array(spectrum.peaks.intensities)
-        for mz, intensity in zip(spectrum.mz, intensities):
+        for mz, intensity in zip(spectrum.mz, intensities, strict=False):
             key = float(mz)
             value = int(intensity)
             ion_intens_dic[key] = value
@@ -114,7 +115,7 @@ def get_filtered_spectra(
     for spectrum in spectra:
         group = spectrum.get("compound_name")
         ions = combinations.loc[group, "Ion_Combination"]
-        if ions is not "NA":
+        if ions != "NA":
             mask = np.isin(spectrum.peaks.mz, ions)
             yield Spectrum(
                 mz=spectrum.peaks.mz[mask],

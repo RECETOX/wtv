@@ -5,7 +5,6 @@
 
 import logging
 import re
-from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import numpy as np
@@ -18,12 +17,8 @@ from wtv.similarity import (
     calculate_solo_compound_combination_score,
 )
 from wtv.utils import (
-    average_rts_for_duplicated_indices,
-    check_rt_data,
-    create_ion_matrix,
     filter_and_sort_combinations,
     load_data,
-    read_msp,
     write_msp,
 )
 
@@ -262,7 +257,7 @@ def calculate_ion_combination(
     if temp_df.shape[1] < 2:
         row["Ion_Combination"] = "NA"
         row["Note"] = (
-            "The available number of ions is less " "than 2, the compound is excluded"
+            "The available number of ions is less than 2, the compound is excluded"
         )
         return row
 

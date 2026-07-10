@@ -22,11 +22,25 @@ repos:
 
   # Run the Ruff linter.
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.8.3
+    rev: v0.9.7
     hooks:
       # Linter
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
+
+  # Run the Black code formatter.
+  - repo: https://github.com/psf/black
+    rev: 25.1.0
+    hooks:
+      - id: black
+        language_version: python3.12
+
+  # Run the isort import sorter.
+  - repo: https://github.com/pycqa/isort
+    rev: 6.0.1
+    hooks:
+      - id: isort
+        name: isort (python)
 
 # sets up .pre-commit-ci.yaml to ensure pre-commit dependencies stay up to date
 ci:
