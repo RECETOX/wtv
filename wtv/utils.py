@@ -18,6 +18,46 @@ from matchms.importing import load_from_msp
 
 logger = logging.getLogger(__name__)
 
+# Retention metadata fields understood by get_rt_data.
+RETENTION_FIELDS = ("retention_time", "retention_index")
+
+# Starting point for rt_window when retention indices are used. Retention indices
+# span hundreds to thousands of units, so a window carried over from a retention
+# time in minutes would match almost no neighbouring compounds. Tune this for your
+# own gradient and index variation.
+RT_INDEX_WINDOW_DEFAULT = 20.0
+
+
+def resolve_rt_window(
+    rt_window: float | None, retention_field: str, rt_default: float
+) -> float:
+    """Pick the retention window to use when the caller left it unset.
+
+    Retention times and retention indices live on very different scales, so the
+    window cannot have a single scale-free default. An explicitly supplied
+    ``rt_window`` is always honoured unchanged.
+
+    Args:
+        rt_window: User supplied window, or None to select a default.
+        retention_field: Field used for retention data.
+        rt_default: Default for retention times; differs between the CLI and the
+            library API for backwards compatibility.
+
+    Returns:
+        The window to apply, in the units of ``retention_field``.
+    """
+    if rt_window is not None:
+        return rt_window
+    if retention_field == "retention_index":
+        logger.warning(
+            "No rt_window given; using %.1f retention index units. Retention indices "
+            "are not on a minute scale, so review this value against the index spread "
+            "of your data.",
+            RT_INDEX_WINDOW_DEFAULT,
+        )
+        return RT_INDEX_WINDOW_DEFAULT
+    return rt_default
+
 
 def normalize_array(array: np.ndarray, desired_max: float = 100.0) -> np.ndarray:
     """Normalize an array to a desired maximum value.
@@ -62,6 +102,46 @@ def read_msp(
     return meta, df
 
 
+class MissingRetentionDataError(ValueError):
+    """Raised when the selected retention field carries no usable values."""
+
+
+def missing_retention_error(
+    retention_field: str, available_fields: pd.Index
+) -> MissingRetentionDataError:
+    """Build an actionable error for unusable retention data.
+
+    Args:
+        retention_field: Field the user asked to use for retention data.
+        available_fields: Metadata fields actually present in the spectra.
+
+    Returns:
+        MissingRetentionDataError naming the problem and, when possible, the field
+        to switch to.
+    """
+    available = set(available_fields)
+    alternatives = [
+        field
+        for field in RETENTION_FIELDS
+        if field != retention_field and field in available
+    ]
+    message = f"No usable '{retention_field}' value found in any spectrum."
+    if alternatives:
+        suggestion = alternatives[0]
+        message += (
+            f" Found '{suggestion}' instead - GC-MS libraries frequently provide a "
+            f"retention index rather than a retention time. Rerun with "
+            f"'--retention_field {suggestion}' (or retention_field='{suggestion}' "
+            f"when calling the library directly) to use it."
+        )
+    else:
+        message += (
+            f" No alternative retention field is available; metadata fields present: "
+            f"{sorted(available)}."
+        )
+    return MissingRetentionDataError(message)
+
+
 def get_rt_data(retention_field: str, spectra: list[Spectrum]) -> pd.DataFrame:
     """Extract retention data from spectra.
 
@@ -72,16 +152,28 @@ def get_rt_data(retention_field: str, spectra: list[Spectrum]) -> pd.DataFrame:
 
     Returns:
         DataFrame with compound names as index and retention values.
+
+    Raises:
+        MissingRetentionDataError: If the requested retention field is absent from
+            the metadata or holds no numeric value for any spectrum.
+        ValueError: If the spectra carry no 'compound_name' metadata.
     """
     spectra_md, _ = get_metadata_as_array(spectra)
-    df = (
-        pd.DataFrame(spectra_md)
-        .rename(columns={"compound_name": "Name", retention_field: "RT"})
-        .get(["Name", "RT"])
-    )
+    df = pd.DataFrame(spectra_md)
+    if retention_field not in df.columns:
+        raise missing_retention_error(retention_field, df.columns)
+    df = df.rename(columns={"compound_name": "Name", retention_field: "RT"})
+    if "Name" not in df.columns:
+        raise ValueError(
+            "No 'compound_name' metadata found in spectra; retention data is "
+            "matched to compounds by name."
+        )
+    df = df[["Name", "RT"]]
     df.set_index("Name", inplace=True)
     # Convert RT column to float, handling string values
     df["RT"] = pd.to_numeric(df["RT"], errors="coerce")
+    if not df["RT"].notna().any():
+        raise missing_retention_error(retention_field, df.columns)
     return df
 
 
