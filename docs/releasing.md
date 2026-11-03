@@ -43,8 +43,10 @@ keep in sync, and it rewrites `pyproject.toml` and `uv.lock` together. It does n
 commit or tag - the release branch goes through a pull request like any other
 change.
 
-1.  Start from a clean, up-to-date `main`. The tool refuses a dirty tree, which is
-    why the setup for a release is committed before the bump itself.
+1.  Start from a clean, up-to-date `main`. The tool refuses a tree with modified
+    tracked files, which is why the setup for a release is committed before the
+    bump itself. Untracked files are not refused, so do not expect it to catch
+    stray data files for you.
 
     ```bash
     git checkout main && git pull
@@ -57,6 +59,10 @@ change.
     uv run bump-my-version bump <part> --dry-run --verbose
     ```
 
+    Two targets should be listed: `pyproject.toml:project.version`, printed as a
+    PEP 621 pointer rather than a bare filename, and `uv.lock`. Anything else in
+    that list is a mistake in `[tool.bumpversion]`.
+
 3.  Apply the bump:
 
     ```bash
@@ -66,12 +72,17 @@ change.
 4.  Refresh the environment, so the installed metadata and the lock agree:
 
     ```bash
-    uv sync
+    uv sync --all-extras --dev
     ```
 
     Without this step the editable install still reports the previous version and
     `tests/test_version.py` fails. That failure is the intended signal, not a
     problem with the test.
+
+    Pass the extras. `dev` and `docs` are optional-dependency extras rather than
+    uv dependency groups, so a bare `uv sync` removes them - it uninstalls pytest,
+    ruff, black, isort and bump-my-version, and the verification below then fails
+    for the wrong reason.
 
 5.  Verify:
 
@@ -101,6 +112,10 @@ git tag -a v<version> -m "Release <version>"
 git push origin v<version>
 ```
 
+`-a` makes an annotated tag. The tags up to v0.2.1 are lightweight, so this
+deliberately changes the convention: an annotated tag records who tagged it and
+when, and `git describe` ignores lightweight tags unless given `--tags`.
+
 Then publish a GitHub release for that tag. `.github/workflows/publish.yml` runs
 on the `published` event, builds with `uv build` and uploads with
 `uv publish --token $PYPI_API_TOKEN`. The workflow can also be started by hand
@@ -109,8 +124,9 @@ on the `published` event, builds with `uv build` and uploads with
 ## Checklist
 
 - [ ] The bump level matches the policy above, not merely the size of the diff
-- [ ] `uv run bump-my-version bump <part> --dry-run --verbose` lists only
-      `pyproject.toml` and `uv.lock`
+- [ ] The dry run lists only `pyproject.toml:project.version` and `uv.lock`
+- [ ] The environment was refreshed with `uv sync --all-extras --dev`, so the
+      verification ran with the tools installed
 - [ ] Every user-visible change since the previous tag is in the changelog section
       for this release, including its reason and any limitation
 - [ ] `uv lock --locked`, `uv run pytest`, `uv run ruff check .` and `uv build` pass
@@ -130,3 +146,9 @@ on the `published` event, builds with `uv build` and uploads with
 - The `uv.lock` entry under `[tool.bumpversion]` matches the shape of the lock
   file uv writes today. If that shape changes, the bump stops with an error
   (`ignore_missing_version = false`) rather than half-bumping the release.
+- `dev` is a published extra, not a uv dependency group, so `bump-my-version` and
+  the other release tools appear in `Requires-Dist ... extra == "dev"` and
+  `pip install wtv[dev]` pulls them. Moving the whole `dev` extra to a
+  `[dependency-groups]` section would keep them out of the published metadata and
+  make a bare `uv sync` install them; that changes every `uv sync --all-extras`
+  call in the README, the docs and CI, so it is a change for its own branch.

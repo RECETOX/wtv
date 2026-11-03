@@ -55,12 +55,23 @@ class TestVersion:
         """A stale lock means environments were built from another version."""
         assert get_locked_version() == get_declared_version()
 
-    def test_cli_reports_the_version(self, monkeypatch, capsys):
-        """``--version`` must print the version and stop before doing work."""
+    def test_cli_reports_the_declared_version(self, monkeypatch, capsys):
+        """``--version`` must print the declared version and start no work.
+
+        The printed string has to be compared against the declaration, not against
+        ``wtv.__version__``, which is what the CLI interpolates and would therefore
+        match whatever wrong version both of them report.
+        """
+        calls = {}
+        monkeypatch.setattr(
+            cli, "run_ion_selection", lambda **kwargs: calls.update(kwargs)
+        )
         monkeypatch.setattr(sys, "argv", ["wtv-cli", "--version"])
 
         with pytest.raises(SystemExit) as excinfo:
             cli.main()
 
+        captured = capsys.readouterr()
         assert excinfo.value.code == 0
-        assert wtv.__version__ in capsys.readouterr().out
+        assert captured.out.strip() == f"wtv-cli {get_declared_version()}"
+        assert not calls

@@ -7,8 +7,9 @@ from importlib.metadata import PackageNotFoundError, version
 
 try:
     __version__ = version("wtv")
-except PackageNotFoundError:  # pragma: no cover - source tree without an install
-    # Importing the package must not fail when it is used straight from a clone.
+except PackageNotFoundError:
+    # A source tree that was never installed. Importing the package must not fail
+    # over it; "0+unknown" is a legal PEP 440 version that no release can have.
     __version__ = "0+unknown"
 
 __all__ = ["__version__"]

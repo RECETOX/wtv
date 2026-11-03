@@ -103,7 +103,7 @@ which rewrites `pyproject.toml` and `uv.lock` together:
 ```bash
 uv run bump-my-version bump patch --dry-run --verbose   # preview
 uv run bump-my-version bump patch                        # apply
-uv sync                                                  # refresh the environment
+uv sync --all-extras --dev                               # refresh the environment
 ```
 
 Merging the resulting branch into `main`, tagging it `v<version>` and publishing a
