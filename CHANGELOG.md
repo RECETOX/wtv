@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-03
+
 ### Added
 - **Support for GC datasets without retention time but with a retention index**
   - New CLI option `--retention_field` (`retention_time` or `retention_index`), and a matching `retention_field` parameter in `read_msp`, `load_data`, `parse_spectra`, and `run_ion_selection`
@@ -29,7 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - docs/api_utils.md: corrected the `retention` parameter name to `retention_field` in `read_msp` and `parse_spectra`, documented `retention_field` for `load_data`, added `resolve_rt_window`, `MissingRetentionDataError`, `RT_WINDOW_DEFAULT`, `RT_INDEX_WINDOW_DEFAULT`, and `RETENTION_FIELDS`, including the measured retention-index conversions of the two test libraries
   - docs/api_ion_selection.md and docs/library_usage.md: added the missing `retention_field` parameter row, documented the field-dependent `rt_window` default, and replaced example windows that were wide enough to compare the whole library
   - docs/usage.md: retention parameters updated for retention-index data
-- Locked dependencies updated by Dependabot since v0.2.1 (certifi, virtualenv, and three updates of the uv group); the requirements declared in `pyproject.toml` are unchanged
+- Locked dependencies updated by Dependabot since v0.2.1: `certifi`; `virtualenv` with its `packaging` and `python-discovery` companions; and the uv group, i.e. `black`, `mkdocs-material` and `urllib3`. Nothing in `pyproject.toml` required a different version, so installing an older release still resolves as before
 
 ### Fixed
 - Selecting a retention field the MSP file does not provide no longer crashes with a confusing `AttributeError: 'NoneType' object has no attribute 'set_index'`; it now raises `MissingRetentionDataError` with an actionable message
