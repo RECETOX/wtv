@@ -7,6 +7,7 @@ Welcome to the WTV documentation. This project provides tools for ion selection 
 - Command-line interface (CLI) for easy usage
 - Library functions for programmatic access
 - Support for MSP file format
+- Support for libraries with retention times or retention indices
 - Configurable parameters for different use cases
 
 ## Quick Start

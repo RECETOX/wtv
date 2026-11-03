@@ -16,7 +16,12 @@ from wtv.similarity import (
     calculate_solo_compound_combination_score,
     get_ion_list,
 )
-from wtv.utils import filter_and_sort_combinations, load_data, write_msp
+from wtv.utils import (
+    filter_and_sort_combinations,
+    load_data,
+    resolve_rt_window,
+    write_msp,
+)
 
 
 def run_ion_selection(
@@ -24,7 +29,7 @@ def run_ion_selection(
     output_directory: Path,
     mz_min: float = 0.0,
     mz_max: float = np.inf,
-    rt_window: float = 1.0,
+    rt_window: float | None = None,
     min_ion_intensity_percent: float = 5.0,
     min_ion_num: int = 3,
     prefer_mz_threshold: float = 150.0,
@@ -40,17 +45,28 @@ def run_ion_selection(
         output_directory: Directory for output files.
         mz_min: Minimum m/z value. Defaults to 0.
         mz_max: Maximum m/z value. Defaults to infinity.
-        rt_window: Retention time window for finding nearby compounds. Defaults to 1.0.
+        rt_window: Retention window for finding nearby compounds, in the units of
+            ``retention_field``. Defaults to ``RT_WINDOW_DEFAULT`` (minutes) for
+            retention times and to ``RT_INDEX_WINDOW_DEFAULT`` (index units) for
+            retention indices. Keep it comparable to the distance between
+            co-eluting compounds; a window covering a large part of the gradient
+            compares every compound against every other.
         min_ion_intensity_percent: Minimum ion intensity as percentage. Defaults to 5.0.
         min_ion_num: Minimum number of ions required. Defaults to 3.
         prefer_mz_threshold: Preferred m/z threshold for scoring. Defaults to 150.0.
         similarity_threshold: Similarity threshold for identifying similar compounds. Defaults to 0.85.
         fr_factor: Fragment ratio factor. Defaults to 2.0.
         retention_time_max: Maximum retention time/index value. Defaults to infinity.
-        retention_field: Field to use for retention data. Defaults to "retention_time".
+        retention_field: Field to use for retention data: "retention_time" or
+            "retention_index". Defaults to "retention_time".
+
+    Raises:
+        MissingRetentionDataError: If the selected retention field carries no
+            usable values for the given MSP file.
     """
     logging.info(f"Loading data from {msp_file_path}.")
     RT_data, matrix = load_data(msp_file_path, mz_min, mz_max, retention_field)
+    rt_window = resolve_rt_window(rt_window, retention_field)
 
     logging.info("Generating ion combinations.")
     combination_result_df = generate_ion_combinations(

@@ -1,5 +1,7 @@
 """Tests for wtv utility functions."""
 
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -7,16 +9,23 @@ from matchms import Spectrum
 from matchms.exporting import save_as_msp
 from matchms.importing import load_from_msp
 
+from test_data import get_test_file
+from wtv.ion_selection import get_nearby_compounds
 from wtv.similarity import get_ion_list
 from wtv.utils import (
+    RT_INDEX_WINDOW_DEFAULT,
+    RT_WINDOW_DEFAULT,
+    MissingRetentionDataError,
     average_rts_for_duplicated_indices,
     create_ion_matrix,
     filter_and_sort_combinations,
     get_filtered_spectra,
     get_rt_data,
+    load_data,
     normalize_array,
     parse_spectra,
     read_msp,
+    resolve_rt_window,
     write_msp,
 )
 
@@ -66,6 +75,38 @@ def test_msp_with_retention_index(tmp_path):
             metadata={
                 "compound_name": "Compound2",
                 "retention_time": 10.0,
+                "retention_index": 1750.0,
+            },
+        ),
+    ]
+    save_as_msp(mock_spectra, str(test_msp_path))
+
+    yield test_msp_path, mock_spectra
+
+
+@pytest.fixture
+def test_msp_without_retention_time(tmp_path):
+    """Create an MSP file holding only a retention index.
+
+    GC-MS libraries frequently omit retention time while providing retention
+    index, which is the scenario issue #25 covers.
+    """
+    test_msp_path = tmp_path / "test_ri_only.msp"
+
+    mock_spectra = [
+        Spectrum(
+            mz=np.array([100, 200, 300, 400], dtype=float),
+            intensities=np.array([100, 80, 60, 40], dtype=float),
+            metadata={
+                "compound_name": "Compound1",
+                "retention_index": 1500.0,
+            },
+        ),
+        Spectrum(
+            mz=np.array([100, 200, 350, 450], dtype=float),
+            intensities=np.array([90, 70, 50, 30], dtype=float),
+            metadata={
+                "compound_name": "Compound2",
                 "retention_index": 1750.0,
             },
         ),
@@ -203,6 +244,57 @@ class TestUtils:
         assert "RT" in df.columns
         assert df.loc["Compound1", "RT"] == 1500.0
 
+    def test_read_msp_without_retention_time(self, test_msp_without_retention_time):
+        """Test reading a GC dataset that only provides a retention index."""
+        msp_path, _ = test_msp_without_retention_time
+        meta, rt_data = read_msp(msp_path, retention_field="retention_index")
+        assert len(meta) == 2
+        assert rt_data.loc["Compound1", "RT"] == 1500.0
+        assert rt_data.loc["Compound2", "RT"] == 1750.0
+
+    def test_get_rt_data_without_retention_time(self, test_msp_without_retention_time):
+        """Requesting retention_time must fail with a pointer to retention_index."""
+        mock_spectra = test_msp_without_retention_time[1]
+        with pytest.raises(MissingRetentionDataError) as excinfo:
+            get_rt_data("retention_time", mock_spectra)
+        message = str(excinfo.value)
+        assert "retention_time" in message
+        assert "--retention_field retention_index" in message
+
+    def test_get_rt_data_without_any_retention_data(self):
+        """Without any retention field the error lists the available metadata."""
+        spectra = [
+            Spectrum(
+                mz=np.array([100.0, 200.0]),
+                intensities=np.array([10.0, 20.0]),
+                metadata={"compound_name": "Compound1"},
+            )
+        ]
+        with pytest.raises(MissingRetentionDataError) as excinfo:
+            get_rt_data("retention_time", spectra)
+        assert "No alternative retention field is available" in str(excinfo.value)
+
+    def test_get_rt_data_with_non_numeric_values_only(self):
+        """Unparseable retention values are treated as missing data."""
+        spectra = [
+            Spectrum(
+                mz=np.array([100.0, 200.0]),
+                intensities=np.array([10.0, 20.0]),
+                metadata={"compound_name": "Compound1", "retention_time": "n/a"},
+            )
+        ]
+        with pytest.raises(MissingRetentionDataError):
+            get_rt_data("retention_time", spectra)
+
+    def test_load_data_without_retention_time(self, test_msp_without_retention_time):
+        """Data loading works end to end on retention index input."""
+        msp_path, _ = test_msp_without_retention_time
+        rt_data, matrix = load_data(msp_path, 50, 500, "retention_index")
+        assert list(rt_data.columns) == ["RT"]
+        assert rt_data.index.name == "Name"
+        assert rt_data["RT"].tolist() == [1500.0, 1750.0]
+        assert matrix.shape[0] == 2
+
     def test_filter_and_sort_combinations(self):
         """Test filtering and sorting combinations."""
         df = pd.DataFrame(
@@ -213,6 +305,70 @@ class TestUtils:
         # After sorting ascending: [1.0, 2.0, 3.0, 4.0], filter keeps all >= 1.0
         assert len(result) == 4
         assert result.iloc[0]["score"] == 1.0  # First after sort
+
+
+class TestResolveRtWindow:
+    """Retention windows are scale dependent, so defaults depend on the field."""
+
+    def test_explicit_window_is_kept_for_retention_time(self):
+        assert resolve_rt_window(5.0, "retention_time") == 5.0
+
+    def test_explicit_window_is_kept_for_retention_index(self):
+        assert resolve_rt_window(5.0, "retention_index") == 5.0
+
+    def test_retention_time_default(self):
+        assert resolve_rt_window(None, "retention_time") is RT_WINDOW_DEFAULT
+
+    def test_retention_index_gets_wider_default(self):
+        assert resolve_rt_window(None, "retention_index") is RT_INDEX_WINDOW_DEFAULT
+
+    @pytest.mark.parametrize(
+        "field, level", [("retention_time", "INFO"), ("retention_index", "WARNING")]
+    )
+    def test_substituted_default_is_announced(self, caplog, field, level):
+        """The substituted window is logged, whatever the field, for reproducibility."""
+        with caplog.at_level(level):
+            resolve_rt_window(None, field)
+        assert "rt_window" in caplog.text
+
+    def test_defaults_are_equivalent_across_the_two_scales(self):
+        """The two defaults must describe a similar physical time window.
+
+        Retention indices convert to time through the gradient slope. The two
+        test libraries that carry both fields measure 325 and 345 index units per
+        minute; the band below accepts any plausible GC gradient slope without
+        pinning the test to one library.
+        """
+        index_units_per_minute = RT_INDEX_WINDOW_DEFAULT / RT_WINDOW_DEFAULT
+        assert 150 <= index_units_per_minute <= 600
+
+
+class TestRtWindowSelectsCoElutingCompounds:
+    """A default window must select genuine co-elution, not most of the library."""
+
+    @pytest.fixture
+    def chunk_0_retention(self):
+        rt_data, _ = load_data(
+            Path(get_test_file("chunk_0")), 0.0, np.inf, "retention_time"
+        )
+        return rt_data
+
+    def _mean_neighbours(self, window, rt_data):
+        counts = [
+            len(get_nearby_compounds(window, rt_data)[name]) for name in rt_data.index
+        ]
+        return float(np.mean(counts))
+
+    def test_default_window_keeps_neighbours_a_minority(self, chunk_0_retention):
+        """At the default only a small share of compounds counts as nearby."""
+        mean_neighbours = self._mean_neighbours(RT_WINDOW_DEFAULT, chunk_0_retention)
+        assert mean_neighbours <= 0.15 * len(chunk_0_retention)
+
+    def test_minute_scale_window_is_the_pathological_case(self, chunk_0_retention):
+        """Documents why the window may not be expressed in whole minutes."""
+        broad = self._mean_neighbours(1.0, chunk_0_retention)
+        tight = self._mean_neighbours(RT_WINDOW_DEFAULT, chunk_0_retention)
+        assert broad > 5 * tight
 
 
 class TestGetIonList:

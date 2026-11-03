@@ -32,6 +32,7 @@ See [Library Usage](library_usage.md) for detailed documentation.
 |-----------|-------------|---------------|
 | `mz_min` | Minimum m/z value | 35-100 |
 | `mz_max` | Maximum m/z value | 400-1000 |
-| `rt_window` | Retention time window | 1.0-3.0 |
+| `rt_window` | Retention window, in the units of the retention field | a few times the distance between co-eluting compounds: about 0.05-0.3 minutes, or 20-100 index units |
+| `retention_field` | Field used for retention data | retention_time or retention_index |
 | `similarity_threshold` | Similarity threshold | 0.8-0.95 |
 | `min_ion_num` | Minimum ions required | 2-5 |

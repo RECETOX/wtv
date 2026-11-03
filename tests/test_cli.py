@@ -1,9 +1,14 @@
+import logging
 import os
 import subprocess
+import sys
 
 import pytest
 
 from test_data import get_test_file
+from wtv import cli
+from wtv.cli import main
+from wtv.utils import RT_INDEX_WINDOW_DEFAULT, RT_WINDOW_DEFAULT
 
 
 @pytest.fixture
@@ -76,3 +81,116 @@ class TestCLI:
                     line.rstrip() for line in ground_truth_file if line.strip() != ""
                 ]
                 assert output_lines == ground_truth_lines
+
+
+class TestCLIRetentionIndex:
+    """The CLI must guide users when only a retention index is available."""
+
+    def test_missing_retention_time_exits_with_guidance(
+        self, msp_without_retention_time, setup_output_dir, monkeypatch, caplog
+    ):
+        """Default retention_time must stop with exit code 1 and a hint."""
+        monkeypatch.setattr(
+            sys,
+            "argv",
+            [
+                "wtv-cli",
+                "--msp_path",
+                str(msp_without_retention_time),
+                "--outpath",
+                str(setup_output_dir),
+            ],
+        )
+
+        with caplog.at_level(logging.ERROR):
+            with pytest.raises(SystemExit) as excinfo:
+                main()
+
+        assert excinfo.value.code == 1
+        assert "--retention_field retention_index" in caplog.text
+        assert not any(setup_output_dir.iterdir())
+
+    def test_retention_field_and_window_are_forwarded(
+        self, msp_without_retention_time, setup_output_dir, monkeypatch
+    ):
+        """The selected field and its scale-aware window reach the API."""
+        calls = {}
+        monkeypatch.setattr(
+            cli,
+            "run_ion_selection",
+            lambda **kwargs: calls.update(kwargs),
+        )
+        monkeypatch.setattr(
+            sys,
+            "argv",
+            [
+                "wtv-cli",
+                "--msp_path",
+                str(msp_without_retention_time),
+                "--outpath",
+                str(setup_output_dir),
+                "--retention_field",
+                "retention_index",
+            ],
+        )
+
+        main()
+
+        assert calls["retention_field"] == "retention_index"
+        assert calls["rt_window"] == RT_INDEX_WINDOW_DEFAULT
+
+    def test_retention_time_window_default(
+        self, msp_path, setup_output_dir, monkeypatch
+    ):
+        """The CLI must pass the scale-appropriate retention-time window."""
+        calls = {}
+        monkeypatch.setattr(
+            cli,
+            "run_ion_selection",
+            lambda **kwargs: calls.update(kwargs),
+        )
+        monkeypatch.setattr(
+            sys,
+            "argv",
+            [
+                "wtv-cli",
+                "--msp_path",
+                str(msp_path),
+                "--outpath",
+                str(setup_output_dir),
+            ],
+        )
+
+        main()
+
+        assert calls["retention_field"] == "retention_time"
+        assert calls["rt_window"] == RT_WINDOW_DEFAULT
+
+    def test_explicit_window_overrides_retention_index_default(
+        self, msp_without_retention_time, setup_output_dir, monkeypatch
+    ):
+        calls = {}
+        monkeypatch.setattr(
+            cli,
+            "run_ion_selection",
+            lambda **kwargs: calls.update(kwargs),
+        )
+        monkeypatch.setattr(
+            sys,
+            "argv",
+            [
+                "wtv-cli",
+                "--msp_path",
+                str(msp_without_retention_time),
+                "--outpath",
+                str(setup_output_dir),
+                "--retention_field",
+                "retention_index",
+                "--rt_window",
+                "35",
+            ],
+        )
+
+        main()
+
+        assert calls["rt_window"] == 35.0

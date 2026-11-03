@@ -14,13 +14,14 @@ Main function for performing ion selection on MSP files.
 | `output_directory` | Path | Required | Directory to save the output files |
 | `mz_min` | float | 0 | Minimum m/z value |
 | `mz_max` | float | inf | Maximum m/z value |
-| `rt_window` | float | 1 | Retention time window for finding nearby compounds |
+| `rt_window` | float \| None | None | Retention window for finding nearby compounds, in the units of `retention_field`; defaults to `RT_WINDOW_DEFAULT` (0.1 minutes) for retention times and to `RT_INDEX_WINDOW_DEFAULT` (40 index units) for retention indices |
 | `min_ion_intensity_percent` | float | 5 | Minimum ion intensity percentage |
 | `min_ion_num` | int | 3 | Minimum number of ions required |
 | `prefer_mz_threshold` | float | 150 | Preferred m/z threshold |
 | `similarity_threshold` | float | 0.85 | Similarity threshold for compound matching |
 | `fr_factor` | float | 2 | Fragment ratio factor |
-| `retention_time_max` | float | inf | Maximum retention time |
+| `retention_time_max` | float | inf | Maximum retention time or index value |
+| `retention_field` | str | "retention_time" | Field to use for retention data: "retention_time" or "retention_index"; raises `MissingRetentionDataError` when the selected field carries no usable values |
 
 ### Example
 
@@ -33,7 +34,7 @@ run_ion_selection(
     output_directory=Path("output"),
     mz_min=35,
     mz_max=400,
-    rt_window=2.00,
+    rt_window=0.1,
     min_ion_intensity_percent=7,
     min_ion_num=2,
     prefer_mz_threshold=60,
@@ -58,7 +59,7 @@ Generate optimal ion combinations for compounds based on similarity and retentio
 | `fr_factor` | float | Fragment ratio factor |
 | `RT_data` | pd.DataFrame | DataFrame with retention time data |
 | `matrix` | pd.DataFrame | DataFrame with ion intensities |
-| `rt_window` | float | Retention time window |
+| `rt_window` | float | Retention window, in the units of the retention field |
 
 ### Returns
 

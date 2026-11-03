@@ -6,6 +6,10 @@
 
 An implementation of ion selection based on WTV-2.0
 
+MSP libraries that provide either retention times or retention indices are
+supported (GC-MS libraries frequently carry only a retention index; select it
+with `--retention_field`).
+
 ## Project Setup
 
 ### Using uv (Recommended)
