@@ -46,8 +46,11 @@ def run_ion_selection(
         mz_min: Minimum m/z value. Defaults to 0.
         mz_max: Maximum m/z value. Defaults to infinity.
         rt_window: Retention window for finding nearby compounds, in the units of
-            ``retention_field``. Defaults to 1.0 for retention times and to
-            ``RT_INDEX_WINDOW_DEFAULT`` for retention indices.
+            ``retention_field``. Defaults to ``RT_WINDOW_DEFAULT`` (minutes) for
+            retention times and to ``RT_INDEX_WINDOW_DEFAULT`` (index units) for
+            retention indices. Keep it comparable to the distance between
+            co-eluting compounds; a window covering a large part of the gradient
+            compares every compound against every other.
         min_ion_intensity_percent: Minimum ion intensity as percentage. Defaults to 5.0.
         min_ion_num: Minimum number of ions required. Defaults to 3.
         prefer_mz_threshold: Preferred m/z threshold for scoring. Defaults to 150.0.
@@ -63,7 +66,7 @@ def run_ion_selection(
     """
     logging.info(f"Loading data from {msp_file_path}.")
     RT_data, matrix = load_data(msp_file_path, mz_min, mz_max, retention_field)
-    rt_window = resolve_rt_window(rt_window, retention_field, rt_default=1.0)
+    rt_window = resolve_rt_window(rt_window, retention_field)
 
     logging.info("Generating ion combinations.")
     combination_result_df = generate_ion_combinations(

@@ -15,6 +15,7 @@ from wtv.ion_selection import generate_ion_combinations, run_ion_selection
 from wtv.utils import (
     RETENTION_FIELDS,
     RT_INDEX_WINDOW_DEFAULT,
+    RT_WINDOW_DEFAULT,
     MissingRetentionDataError,
     get_filtered_spectra,
     parse_spectra,
@@ -57,8 +58,10 @@ def parse_args() -> argparse.Namespace:
         required=False,
         help=(
             "Retention window for finding nearby compounds, in the units of "
-            "--retention_field. Defaults to 2.0 for retention_time and to "
-            f"{RT_INDEX_WINDOW_DEFAULT} for retention_index."
+            "--retention_field. Must be comparable to the distance between "
+            "co-eluting compounds, not to the length of the gradient. Defaults "
+            f"to {RT_WINDOW_DEFAULT} (minutes) for retention_time and to "
+            f"{RT_INDEX_WINDOW_DEFAULT} (index units) for retention_index."
         ),
         default=None,
     )
@@ -127,7 +130,7 @@ def main() -> None:
     logging.basicConfig(level=logging.INFO)
     logging.info("Parsed arguments successfully.")
 
-    rt_window = resolve_rt_window(args.rt_window, args.retention_field, rt_default=2.0)
+    rt_window = resolve_rt_window(args.rt_window, args.retention_field)
 
     try:
         run_ion_selection(
@@ -154,7 +157,7 @@ def main_v2() -> None:
     """Alternative entry point using matchms spectra directly."""
     args = parse_args()
 
-    rt_window = resolve_rt_window(args.rt_window, args.retention_field, rt_default=2.0)
+    rt_window = resolve_rt_window(args.rt_window, args.retention_field)
 
     spectra = list(load_spectra(args.msp_path))
     matrix, rts = parse_spectra(

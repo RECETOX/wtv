@@ -8,7 +8,7 @@ import pytest
 from test_data import get_test_file
 from wtv import cli
 from wtv.cli import main
-from wtv.utils import RT_INDEX_WINDOW_DEFAULT
+from wtv.utils import RT_INDEX_WINDOW_DEFAULT, RT_WINDOW_DEFAULT
 
 
 @pytest.fixture
@@ -139,10 +139,10 @@ class TestCLIRetentionIndex:
         assert calls["retention_field"] == "retention_index"
         assert calls["rt_window"] == RT_INDEX_WINDOW_DEFAULT
 
-    def test_retention_time_window_default_is_unchanged(
+    def test_retention_time_window_default(
         self, msp_path, setup_output_dir, monkeypatch
     ):
-        """Existing retention time runs must keep their 2.0 window."""
+        """The CLI must pass the scale-appropriate retention-time window."""
         calls = {}
         monkeypatch.setattr(
             cli,
@@ -164,7 +164,7 @@ class TestCLIRetentionIndex:
         main()
 
         assert calls["retention_field"] == "retention_time"
-        assert calls["rt_window"] == 2.0
+        assert calls["rt_window"] == RT_WINDOW_DEFAULT
 
     def test_explicit_window_overrides_retention_index_default(
         self, msp_without_retention_time, setup_output_dir, monkeypatch

@@ -21,16 +21,26 @@ logger = logging.getLogger(__name__)
 # Retention metadata fields understood by get_rt_data.
 RETENTION_FIELDS = ("retention_time", "retention_index")
 
-# Starting point for rt_window when retention indices are used. Retention indices
-# span hundreds to thousands of units, so a window carried over from a retention
-# time in minutes would match almost no neighbouring compounds. Tune this for your
-# own gradient and index variation.
-RT_INDEX_WINDOW_DEFAULT = 20.0
+# Default rt_window for retention times, in minutes. The window has to be
+# comparable to the distance between compounds that actually co-elute: in
+# test_data/sample_data/chunk_0.msp 87 compounds share a 5.5 minute gradient, so
+# consecutive compounds sit a median of 0.04 minutes (about 2.5 seconds) apart.
+# A window of minutes therefore does not select co-eluting compounds at all - it
+# matches most of the library and the selection degrades into comparing every
+# compound against every other. Tune this to your own gradient and peak widths.
+RT_WINDOW_DEFAULT = 0.1
+
+# Default rt_window for retention indices, in index units. Retention indices span
+# hundreds to thousands of units, so the retention-time default cannot be reused
+# numerically. The two test libraries that carry both fields give the conversion
+# directly: RI = 345.1 * RT + 269.8 (chunk_0.msp) and RI = 325.0 * RT + 355.5
+# (ei_spectra.msp), so one minute is worth roughly 325-345 index units and 40
+# index units correspond to about 0.12 minutes - the same order as
+# RT_WINDOW_DEFAULT. Starting points, not validated optima.
+RT_INDEX_WINDOW_DEFAULT = 40.0
 
 
-def resolve_rt_window(
-    rt_window: float | None, retention_field: str, rt_default: float
-) -> float:
+def resolve_rt_window(rt_window: float | None, retention_field: str) -> float:
     """Pick the retention window to use when the caller left it unset.
 
     Retention times and retention indices live on very different scales, so the
@@ -40,8 +50,6 @@ def resolve_rt_window(
     Args:
         rt_window: User supplied window, or None to select a default.
         retention_field: Field used for retention data.
-        rt_default: Default for retention times; differs between the CLI and the
-            library API for backwards compatibility.
 
     Returns:
         The window to apply, in the units of ``retention_field``.
@@ -49,14 +57,24 @@ def resolve_rt_window(
     if rt_window is not None:
         return rt_window
     if retention_field == "retention_index":
-        logger.warning(
-            "No rt_window given; using %.1f retention index units. Retention indices "
-            "are not on a minute scale, so review this value against the index spread "
-            "of your data.",
+        applied, unit, level = (
             RT_INDEX_WINDOW_DEFAULT,
+            "retention index units",
+            logging.WARNING,
         )
-        return RT_INDEX_WINDOW_DEFAULT
-    return rt_default
+    else:
+        applied, unit, level = RT_WINDOW_DEFAULT, "minutes", logging.INFO
+    # Always report a substituted window: silently inheriting a default that is
+    # orders of magnitude off is what made the old window so hard to notice.
+    logger.log(
+        level,
+        "No rt_window given; using %.3f %s. The window must be comparable to the "
+        "distance between co-eluting compounds, not to the length of the gradient - "
+        "check it against the retention spread of your data.",
+        applied,
+        unit,
+    )
+    return applied
 
 
 def normalize_array(array: np.ndarray, desired_max: float = 100.0) -> np.ndarray:

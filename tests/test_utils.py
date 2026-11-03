@@ -1,5 +1,7 @@
 """Tests for wtv utility functions."""
 
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -7,9 +9,12 @@ from matchms import Spectrum
 from matchms.exporting import save_as_msp
 from matchms.importing import load_from_msp
 
+from test_data import get_test_file
+from wtv.ion_selection import get_nearby_compounds
 from wtv.similarity import get_ion_list
 from wtv.utils import (
     RT_INDEX_WINDOW_DEFAULT,
+    RT_WINDOW_DEFAULT,
     MissingRetentionDataError,
     average_rts_for_duplicated_indices,
     create_ion_matrix,
@@ -290,32 +295,6 @@ class TestUtils:
         assert rt_data["RT"].tolist() == [1500.0, 1750.0]
         assert matrix.shape[0] == 2
 
-
-class TestResolveRtWindow:
-    """Retention windows are scale dependent, so defaults depend on the field."""
-
-    def test_explicit_window_is_kept_for_retention_time(self):
-        assert resolve_rt_window(5.0, "retention_time", rt_default=2.0) == 5.0
-
-    def test_explicit_window_is_kept_for_retention_index(self):
-        assert resolve_rt_window(5.0, "retention_index", rt_default=2.0) == 5.0
-
-    def test_retention_time_default_is_kept(self):
-        """Existing retention time behaviour must not change."""
-        assert resolve_rt_window(None, "retention_time", rt_default=2.0) == 2.0
-
-    def test_retention_index_gets_wider_default(self):
-        assert (
-            resolve_rt_window(None, "retention_index", rt_default=2.0)
-            is RT_INDEX_WINDOW_DEFAULT
-        )
-
-    def test_retention_index_default_is_announced(self, caplog):
-        """The substituted default is visible in the log for reproducibility."""
-        with caplog.at_level("WARNING"):
-            resolve_rt_window(None, "retention_index", rt_default=2.0)
-        assert "rt_window" in caplog.text
-
     def test_filter_and_sort_combinations(self):
         """Test filtering and sorting combinations."""
         df = pd.DataFrame(
@@ -326,6 +305,70 @@ class TestResolveRtWindow:
         # After sorting ascending: [1.0, 2.0, 3.0, 4.0], filter keeps all >= 1.0
         assert len(result) == 4
         assert result.iloc[0]["score"] == 1.0  # First after sort
+
+
+class TestResolveRtWindow:
+    """Retention windows are scale dependent, so defaults depend on the field."""
+
+    def test_explicit_window_is_kept_for_retention_time(self):
+        assert resolve_rt_window(5.0, "retention_time") == 5.0
+
+    def test_explicit_window_is_kept_for_retention_index(self):
+        assert resolve_rt_window(5.0, "retention_index") == 5.0
+
+    def test_retention_time_default(self):
+        assert resolve_rt_window(None, "retention_time") is RT_WINDOW_DEFAULT
+
+    def test_retention_index_gets_wider_default(self):
+        assert resolve_rt_window(None, "retention_index") is RT_INDEX_WINDOW_DEFAULT
+
+    @pytest.mark.parametrize(
+        "field, level", [("retention_time", "INFO"), ("retention_index", "WARNING")]
+    )
+    def test_substituted_default_is_announced(self, caplog, field, level):
+        """The substituted window is logged, whatever the field, for reproducibility."""
+        with caplog.at_level(level):
+            resolve_rt_window(None, field)
+        assert "rt_window" in caplog.text
+
+    def test_defaults_are_equivalent_across_the_two_scales(self):
+        """The two defaults must describe a similar physical time window.
+
+        Retention indices convert to time through the gradient slope. The two
+        test libraries that carry both fields measure 325 and 345 index units per
+        minute; the band below accepts any plausible GC gradient slope without
+        pinning the test to one library.
+        """
+        index_units_per_minute = RT_INDEX_WINDOW_DEFAULT / RT_WINDOW_DEFAULT
+        assert 150 <= index_units_per_minute <= 600
+
+
+class TestRtWindowSelectsCoElutingCompounds:
+    """A default window must select genuine co-elution, not most of the library."""
+
+    @pytest.fixture
+    def chunk_0_retention(self):
+        rt_data, _ = load_data(
+            Path(get_test_file("chunk_0")), 0.0, np.inf, "retention_time"
+        )
+        return rt_data
+
+    def _mean_neighbours(self, window, rt_data):
+        counts = [
+            len(get_nearby_compounds(window, rt_data)[name]) for name in rt_data.index
+        ]
+        return float(np.mean(counts))
+
+    def test_default_window_keeps_neighbours_a_minority(self, chunk_0_retention):
+        """At the default only a small share of compounds counts as nearby."""
+        mean_neighbours = self._mean_neighbours(RT_WINDOW_DEFAULT, chunk_0_retention)
+        assert mean_neighbours <= 0.15 * len(chunk_0_retention)
+
+    def test_minute_scale_window_is_the_pathological_case(self, chunk_0_retention):
+        """Documents why the window may not be expressed in whole minutes."""
+        broad = self._mean_neighbours(1.0, chunk_0_retention)
+        tight = self._mean_neighbours(RT_WINDOW_DEFAULT, chunk_0_retention)
+        assert broad > 5 * tight
 
 
 class TestGetIonList:

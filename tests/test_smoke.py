@@ -26,10 +26,24 @@ class TestSmoke:
         setup_output_dir = tmp_path / "output_data"
         setup_output_dir.mkdir(parents=True)
 
-        # Run the main function
+        # Parameters are pinned rather than left to the defaults so that the
+        # ground truth stays meaningful, and they are the realistic ones: a
+        # retention window comparable to the distance between co-eluting
+        # compounds. The previous unparameterised call ran with rt_window=1.0
+        # over a 5.5 minute gradient holding 87 compounds, which treats about
+        # 35 compounds per target as neighbours and did not finish in 25 minutes;
+        # with the window below the same comparison takes about 9 minutes.
         run_ion_selection(
             msp_file_path=Path(get_test_file(msp_file)),
             output_directory=setup_output_dir,
+            mz_min=35.0,
+            mz_max=400.0,
+            rt_window=0.1,
+            min_ion_intensity_percent=7.0,
+            min_ion_num=2,
+            prefer_mz_threshold=60.0,
+            similarity_threshold=0.85,
+            fr_factor=2.0,
         )
 
         # Compare output files with ground truth
