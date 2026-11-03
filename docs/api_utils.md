@@ -107,7 +107,9 @@ supplied window is returned unchanged; otherwise a default is chosen. Because
 retention times and retention indices live on different scales there is no
 single scale-free default: for `retention_field="retention_index"` the function
 returns `RT_INDEX_WINDOW_DEFAULT` and logs a warning asking the user to review
-the value against the index spread of their data.
+the value against the index spread of their data. A substituted retention-time
+default is logged at `INFO` level, because a window that is orders of magnitude
+too wide is invisible in the output otherwise.
 
 ### Parameters
 
@@ -115,7 +117,6 @@ the value against the index spread of their data.
 |-----------|------|---------|-------------|
 | `rt_window` | float or None | Required | User supplied window; `None` selects a default |
 | `retention_field` | str | Required | Field used for retention data |
-| `rt_default` | float | Required | Default for retention times; differs between the CLI (2.0) and the library API (1.0) |
 
 ### Returns
 
@@ -126,8 +127,9 @@ the value against the index spread of their data.
 ```python
 from wtv.utils import resolve_rt_window
 
-resolve_rt_window(None, "retention_index", rt_default=2.0)  # -> 20.0 (logs a warning)
-resolve_rt_window(1.5, "retention_index", rt_default=2.0)   # -> 1.5
+resolve_rt_window(None, "retention_index")  # -> 40.0 (logs a warning)
+resolve_rt_window(None, "retention_time")   # -> 0.1
+resolve_rt_window(1.5, "retention_index")   # -> 1.5
 ```
 
 ## `MissingRetentionDataError`
@@ -140,14 +142,33 @@ and states the option to rerun with (for example
 `--retention_field retention_index`). The CLI catches this error, logs the
 message, and exits with code 1 instead of raising a traceback.
 
+## `RT_WINDOW_DEFAULT`
+
+Module constant, `0.1`. Default retention window in minutes, used by
+`resolve_rt_window` when `retention_field="retention_time"` and no explicit
+`rt_window` was given. It replaces the previous default of one minute, which on
+a fast GC gradient spans tens of compounds and turns the neighbour-aware
+selection into an all-compared-against-all search.
+
 ## `RT_INDEX_WINDOW_DEFAULT`
 
-Module constant, `20.0`. Default retention window in retention-index units, used
+Module constant, `40.0`. Default retention window in retention-index units, used
 by `resolve_rt_window` when `retention_field="retention_index"` and no explicit
 `rt_window` was given. Retention indices span hundreds to thousands of units, so
-a window carried over from minute-scale retention times would match almost no
-neighbouring compounds. Treat this value as a starting point and tune it to the
-index spread of your own data.
+neither a minute-scale value nor the retention-time default can be reused
+numerically.
+
+The two constants are calibrated against each other through the gradient slope.
+The test libraries that carry both fields give the conversion directly:
+
+| File | Conversion (least squares fit) | Index units per minute |
+|------|-------------------------------|------------------------|
+| `test_data/sample_data/chunk_0.msp` | RI = 345.09 · RT + 269.80 | 345 |
+| `test_data/sample_data/ei_spectra.msp` | RI = 324.95 · RT + 355.50 | 325 |
+
+At that slope, 40 index units are 0.12 minutes - the same physical window as
+`RT_WINDOW_DEFAULT`. Both values are starting points; tune them to the retention
+spread, gradient, and peak widths of your own data.
 
 ## `RETENTION_FIELDS`
 

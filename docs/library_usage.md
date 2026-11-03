@@ -23,7 +23,7 @@ run_ion_selection(
     output_directory=Path("output"),
     mz_min=35,
     mz_max=400,
-    rt_window=2.00,
+    rt_window=0.1,
     min_ion_intensity_percent=7,
     min_ion_num=2,
     prefer_mz_threshold=60,
@@ -44,7 +44,7 @@ Main function for performing ion selection on MSP files.
 - `output_directory` (Path): Directory to save output
 - `mz_min` (float): Minimum m/z value (default: 0)
 - `mz_max` (float): Maximum m/z value (default: infinity)
-- `rt_window` (float): Retention time window for finding nearby compounds (default: 1)
+- `rt_window` (float): Retention window for finding nearby compounds, in the units of `retention_field` (default: 0.1 minutes, or 40 retention-index units)
 - `min_ion_intensity_percent` (float): Minimum ion intensity percentage (default: 5)
 - `min_ion_num` (int): Minimum number of ions required (default: 3)
 - `prefer_mz_threshold` (float): Preferred m/z threshold (default: 150)
@@ -64,7 +64,7 @@ run_ion_selection(
     output_directory=Path("results"),
     mz_min=50,
     mz_max=500,
-    rt_window=1.5,
+    rt_window=0.15,
     similarity_threshold=0.9,
 )
 ```
@@ -81,7 +81,7 @@ Generate optimal ion combinations for compounds.
 - `fr_factor`: Fragment ratio factor
 - `RT_data`: DataFrame with retention time data
 - `matrix`: DataFrame with ion intensities
-- `rt_window`: Retention time window
+- `rt_window`: Retention window, in the units of the retention field
 
 **Example:**
 
@@ -101,7 +101,7 @@ combinations = generate_ion_combinations(
     fr_factor=2.0,
     RT_data=RT_data,
     matrix=matrix,
-    rt_window=2.0,
+    rt_window=0.1,
 )
 ```
 
