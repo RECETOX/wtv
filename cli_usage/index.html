@@ -366,6 +366,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#retention-indexed-libraries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Retention-Indexed Libraries
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#using-with-uv" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -703,6 +714,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#retention-indexed-libraries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Retention-Indexed Libraries
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#using-with-uv" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -786,8 +808,8 @@
 </tr>
 <tr>
 <td><code>--rt_window</code></td>
-<td>Retention time window.</td>
-<td>2.00</td>
+<td>Retention window for finding nearby compounds, in the units of <code>--retention_field</code>.</td>
+<td>0.1 (<code>retention_time</code>) / 40.0 (<code>retention_index</code>)</td>
 </tr>
 <tr>
 <td><code>--min_ion_intensity_percent</code></td>
@@ -816,8 +838,13 @@
 </tr>
 <tr>
 <td><code>--retention_time_max</code></td>
-<td>Maximum retention time.</td>
-<td>68.80</td>
+<td>Maximum retention time or index value.</td>
+<td>inf</td>
+</tr>
+<tr>
+<td><code>--retention_field</code></td>
+<td>Field to use for retention data; one of <code>retention_time</code> or <code>retention_index</code>. GC-MS libraries often provide a retention index instead of a retention time.</td>
+<td>retention_time</td>
 </tr>
 </tbody>
 </table>
@@ -829,7 +856,7 @@
     --outpath ./output \
     --mz_min 35 \
     --mz_max 400 \
-    --rt_window 2.0 \
+    --rt_window 0.1 \
     --min_ion_intensity_percent 7 \
     --min_ion_num 2 \
     --prefer_mz_threshold 60 \
@@ -844,9 +871,36 @@
     --outpath ./results \
     --mz_min 50 \
     --mz_max 500 \
-    --rt_window 1.5 \
+    --rt_window 0.15 \
     --similarity_threshold 0.9
 </code></pre>
+<h3 id="retention-indexed-libraries">Retention-Indexed Libraries</h3>
+<p>Some GC-MS libraries annotate compounds with a retention index instead of a
+retention time. Select the field the input file provides:</p>
+<pre><code class="language-bash">wtv-cli \
+    --msp_path library_with_ri.msp \
+    --outpath ./output \
+    --retention_field retention_index
+</code></pre>
+<p><code>--rt_window</code> is interpreted in the units of <code>--retention_field</code>. If it is not
+given, <code>0.1</code> is used for retention times (minutes) and <code>40.0</code> retention-index
+units for retention indices (a warning is logged). The two numbers describe the
+same physical window: the test libraries that carry both fields measure 325-345
+index units per minute, so 40 index units are about 0.12 minutes.</p>
+<p>Choosing the window is a matter of matching it to the distance between compounds
+that genuinely co-elute, not to the length of the gradient. A window of whole
+minutes on a fast GC gradient is the failure mode to avoid:
+<code>test_data/sample_data/chunk_0.msp</code> holds 87 compounds between 2.59 and 8.14
+minutes, a median of 0.04 minutes apart, so <code>--rt_window 1.0</code> returns 34.7
+neighbours for the average compound and <code>--rt_window 2.0</code> returns 61.4, out of
+87 - the selection degenerates into comparing every compound against every
+other. At the 0.1 default the same figure is 4.4. Both defaults are starting points, not
+validated optima: check them against the retention spread of your own library.
+An explicit <code>--rt_window</code> always overrides the default.</p>
+<p>If the selected field is absent from the file or holds no numeric value for any
+spectrum, execution stops with an error message that names the retention field
+actually found and the <code>--retention_field</code> value to rerun with, and the CLI
+exits with code 1.</p>
 <h3 id="using-with-uv">Using with uv</h3>
 <p>If you installed with uv, run:</p>
 <pre><code class="language-bash">uv run wtv-cli --msp_path input.msp --outpath ./output --mz_min 35 --mz_max 400

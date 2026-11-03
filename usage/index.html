@@ -686,8 +686,13 @@ run_ion_selection(
 </tr>
 <tr>
 <td><code>rt_window</code></td>
-<td>Retention time window</td>
-<td>1.0-3.0</td>
+<td>Retention window, in the units of the retention field</td>
+<td>a few times the distance between co-eluting compounds: about 0.05-0.3 minutes, or 20-100 index units</td>
+</tr>
+<tr>
+<td><code>retention_field</code></td>
+<td>Field used for retention data</td>
+<td>retention_time or retention_index</td>
 </tr>
 <tr>
 <td><code>similarity_threshold</code></td>

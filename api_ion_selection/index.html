@@ -901,9 +901,9 @@
 </tr>
 <tr>
 <td><code>rt_window</code></td>
-<td>float</td>
-<td>1</td>
-<td>Retention time window for finding nearby compounds</td>
+<td>float | None</td>
+<td>None</td>
+<td>Retention window for finding nearby compounds, in the units of <code>retention_field</code>; defaults to <code>RT_WINDOW_DEFAULT</code> (0.1 minutes) for retention times and to <code>RT_INDEX_WINDOW_DEFAULT</code> (40 index units) for retention indices</td>
 </tr>
 <tr>
 <td><code>min_ion_intensity_percent</code></td>
@@ -939,7 +939,13 @@
 <td><code>retention_time_max</code></td>
 <td>float</td>
 <td>inf</td>
-<td>Maximum retention time</td>
+<td>Maximum retention time or index value</td>
+</tr>
+<tr>
+<td><code>retention_field</code></td>
+<td>str</td>
+<td>"retention_time"</td>
+<td>Field to use for retention data: "retention_time" or "retention_index"; raises <code>MissingRetentionDataError</code> when the selected field carries no usable values</td>
 </tr>
 </tbody>
 </table>
@@ -952,7 +958,7 @@ run_ion_selection(
     output_directory=Path(&quot;output&quot;),
     mz_min=35,
     mz_max=400,
-    rt_window=2.00,
+    rt_window=0.1,
     min_ion_intensity_percent=7,
     min_ion_num=2,
     prefer_mz_threshold=60,
@@ -1011,7 +1017,7 @@ run_ion_selection(
 <tr>
 <td><code>rt_window</code></td>
 <td>float</td>
-<td>Retention time window</td>
+<td>Retention window, in the units of the retention field</td>
 </tr>
 </tbody>
 </table>

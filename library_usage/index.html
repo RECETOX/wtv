@@ -818,7 +818,7 @@ run_ion_selection(
     output_directory=Path(&quot;output&quot;),
     mz_min=35,
     mz_max=400,
-    rt_window=2.00,
+    rt_window=0.1,
     min_ion_intensity_percent=7,
     min_ion_num=2,
     prefer_mz_threshold=60,
@@ -835,7 +835,7 @@ run_ion_selection(
 - <code>output_directory</code> (Path): Directory to save output
 - <code>mz_min</code> (float): Minimum m/z value (default: 0)
 - <code>mz_max</code> (float): Maximum m/z value (default: infinity)
-- <code>rt_window</code> (float): Retention time window for finding nearby compounds (default: 1)
+- <code>rt_window</code> (float): Retention window for finding nearby compounds, in the units of <code>retention_field</code> (default: 0.1 minutes, or 40 retention-index units)
 - <code>min_ion_intensity_percent</code> (float): Minimum ion intensity percentage (default: 5)
 - <code>min_ion_num</code> (int): Minimum number of ions required (default: 3)
 - <code>prefer_mz_threshold</code> (float): Preferred m/z threshold (default: 150)
@@ -852,7 +852,7 @@ run_ion_selection(
     output_directory=Path(&quot;results&quot;),
     mz_min=50,
     mz_max=500,
-    rt_window=1.5,
+    rt_window=0.15,
     similarity_threshold=0.9,
 )
 </code></pre>
@@ -866,7 +866,7 @@ run_ion_selection(
 - <code>fr_factor</code>: Fragment ratio factor
 - <code>RT_data</code>: DataFrame with retention time data
 - <code>matrix</code>: DataFrame with ion intensities
-- <code>rt_window</code>: Retention time window</p>
+- <code>rt_window</code>: Retention window, in the units of the retention field</p>
 <p><strong>Example:</strong></p>
 <pre><code class="language-python">from wtv.utils import load_data
 from wtv.ion_selection import generate_ion_combinations
@@ -883,7 +883,7 @@ combinations = generate_ion_combinations(
     fr_factor=2.0,
     RT_data=RT_data,
     matrix=matrix,
-    rt_window=2.0,
+    rt_window=0.1,
 )
 </code></pre>
 <h2 id="utility-functions">Utility Functions</h2>
