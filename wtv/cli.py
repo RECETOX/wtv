@@ -11,6 +11,7 @@ from pathlib import Path
 from matchms.exporting import save_spectra
 from matchms.importing import load_spectra
 
+from wtv import __version__
 from wtv.ion_selection import generate_ion_combinations, run_ion_selection
 from wtv.utils import (
     RETENTION_FIELDS,
@@ -31,6 +32,12 @@ def parse_args() -> argparse.Namespace:
     """
     parser = argparse.ArgumentParser(
         description="Generate methods for compound analysis."
+    )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"%(prog)s {__version__}",
+        help="Show the package version and exit.",
     )
     parser.add_argument(
         "--msp_path", type=str, required=True, help="Path to the MSP file."
