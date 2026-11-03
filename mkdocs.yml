@@ -5,6 +5,7 @@ nav:
   - CLI Usage: cli_usage.md
   - Library Usage: library_usage.md
   - Usage: usage.md
+  - Releasing: releasing.md
   - API Reference:
       - Overview: api.md
       - Utils: api_utils.md

@@ -92,6 +92,25 @@ pip install dist/wtv-*.whl
 wtv-cli --help
 ```
 
+## Releases
+
+The version is declared once, as `[project].version` in `pyproject.toml`, and is
+read at runtime from the installed distribution metadata (`wtv.__version__`,
+`wtv-cli --version`). Bump it with the configured
+[`bump-my-version`](https://callowayproject.github.io/bump-my-version/) setup,
+which rewrites `pyproject.toml` and `uv.lock` together:
+
+```bash
+uv run bump-my-version bump patch --dry-run --verbose   # preview
+uv run bump-my-version bump patch                        # apply
+uv sync --all-extras --dev                               # refresh the environment
+```
+
+Merging the resulting branch into `main`, tagging it `v<version>` and publishing a
+GitHub release builds and uploads the package to PyPI. See
+[docs/releasing.md](docs/releasing.md) for the version policy and the full
+checklist.
+
 ## Documentation
 
 ### Testing Documentation Locally
