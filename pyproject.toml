@@ -26,6 +26,7 @@ dev = [
     "pre-commit>=4.2.0",
     "isort>=6.0.1",
     "parameterized>=0.9.0",
+    "bump-my-version>=1.8.1",
 ]
 docs = [
     "mkdocs>=1.6.1",
@@ -41,6 +42,36 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["wtv"]
+
+# Version bumping. [project].version above is the only place the version is
+# declared: the tool reads it from the PEP 621 metadata, so there is no second
+# copy to keep in sync. See docs/releasing.md for the release workflow.
+[tool.bumpversion]
+parse = "(?P<major>\\d+)\\.(?P<minor>\\d+)\\.(?P<patch>\\d+)"
+serialize = ["{major}.{minor}.{patch}"]
+# Refuse to bump rather than silently skipping a file whose marker moved, e.g.
+# if uv changes how it records the root package in the lock file.
+ignore_missing_version = false
+# A release branch is committed and reviewed as a pull request, so the commits
+# and the tag are made by hand and not by the tool.
+commit = false
+tag = false
+tag_name = "v{new_version}"
+tag_message = "Release {new_version}"
+allow_dirty = false
+
+# uv records the version of the root (editable) package in the lock file, so
+# the lock has to move with the declaration above.
+[[tool.bumpversion.files]]
+filename = "uv.lock"
+search = '''
+name = "wtv"
+version = "{current_version}"
+'''
+replace = '''
+name = "wtv"
+version = "{new_version}"
+'''
 
 [tool.ruff]
 line-length = 88

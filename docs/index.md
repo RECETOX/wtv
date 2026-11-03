@@ -31,6 +31,7 @@ Explore the sections below:
 - [Installation](installation.md) - How to install and set up the package
 - [CLI Usage](cli_usage.md) - Using the command-line interface
 - [Library Usage](library_usage.md) - Using the library programmatically
+- [Releasing](releasing.md) - Version policy, bumping the version, publishing
 - [API Reference](api.md) - Detailed API documentation
   - [Ion Selection API](api_ion_selection.md)
   - [Utils API](api_utils.md)
